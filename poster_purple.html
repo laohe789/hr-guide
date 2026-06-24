@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HR助手 - 分享海报</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #F5F0EB;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .poster {
+            width: 440px;
+            background: #FFFEF9;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 2px 40px rgba(0,0,0,0.06);
+        }
+        .header {
+            background: #FFFEF9;
+            padding: 28px 24px 12px;
+            text-align: center;
+        }
+        .brand-tag {
+            display: inline-block;
+            background: #FDE6A6;
+            color: #8B6F1F;
+            font-size: 12px;
+            font-weight: 500;
+            padding: 3px 12px;
+            border-radius: 20px;
+            letter-spacing: 1px;
+            margin-bottom: 14px;
+        }
+        .title {
+            font-size: 32px;
+            font-weight: 700;
+            color: #3D3A3A;
+            letter-spacing: 2px;
+            margin-bottom: 4px;
+        }
+        .subtitle {
+            font-size: 13px;
+            color: #999;
+            font-weight: 400;
+            letter-spacing: 1px;
+        }
+        .divider {
+            width: 40px;
+            height: 3px;
+            background: #FDE6A6;
+            border-radius: 2px;
+            margin: 14px auto 0;
+        }
+        .content {
+            padding: 0 20px 24px;
+            text-align: center;
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+            margin-top: 8px;
+        }
+        .feature {
+            border-radius: 14px;
+            padding: 16px 8px 12px;
+            text-align: center;
+            transition: transform 0.2s;
+            cursor: default;
+        }
+        .feat-a { background: #FEF5F0; }
+        .feat-b { background: #F0FAF7; }
+        .feat-c { background: #F5F0FE; }
+        .feat-d { background: #FEFCF0; }
+        .feature svg { width: 36px; height: 36px; margin-bottom: 6px; }
+        .feat-a .fi-color { color: #E8987A; fill: #E8987A; stroke: #E8987A; }
+        .feat-b .fi-color { color: #6EBFA0; fill: #6EBFA0; stroke: #6EBFA0; }
+        .feat-c .fi-color { color: #9B8AE0; fill: #9B8AE0; stroke: #9B8AE0; }
+        .feat-d .fi-color { color: #D4A838; fill: #D4A838; stroke: #D4A838; }
+        .feature-text {
+            font-size: 12px;
+            color: #666;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+        .qr-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            padding: 16px 0;
+            margin-bottom: 10px;
+            border-top: 1px solid #F0ECE4;
+            border-bottom: 1px solid #F0ECE4;
+        }
+        .qr-code {
+            width: 100px;
+            height: 100px;
+            background: #fff;
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+        .qr-code img {
+            width: 100%;
+            height: 100%;
+            border-radius: 12px;
+        }
+        .qr-info {
+            text-align: left;
+        }
+        .qr-info-title {
+            font-size: 15px;
+            font-weight: 500;
+            color: #3D3A3A;
+            margin-bottom: 4px;
+        }
+        .qr-info-sub {
+            font-size: 12px;
+            color: #AAA;
+            line-height: 1.5;
+        }
+        .link-row {
+            font-size: 11px;
+            color: #CCC;
+            word-break: break-all;
+            margin-bottom: 16px;
+            letter-spacing: 0.3px;
+        }
+        .footer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .footer-dot {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #FDE6A6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 13px;
+            color: #8B6F1F;
+        }
+        .footer-text {
+            text-align: left;
+        }
+        .footer-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: #3D3A3A;
+        }
+        .footer-slogan {
+            font-size: 11px;
+            color: #BBB;
+        }
+        .print-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #3D3A3A;
+            color: #FFFEF9;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            letter-spacing: 1px;
+        }
+        .print-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        }
+        @media print {
+            body { background: #FFFEF9; padding: 0; }
+            .print-btn { display: none; }
+            .poster { box-shadow: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="poster" id="poster">
+        <div class="header">
+            <div class="brand-tag">悦汇城 · 员工服务</div>
+            <div class="title">HR 助手</div>
+            <div class="subtitle">操作指引汇总平台</div>
+            <div class="divider"></div>
+        </div>
+        <div class="content">
+
+            <div class="features">
+                <div class="feature feat-b">
+                    <svg viewBox="0 0 32 32" fill="none" stroke="#6EBFA0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="16" cy="16" r="13"/>
+                        <polyline points="16,7 16,16 22,19"/>
+                    </svg>
+                    <div class="feature-text">考勤指引</div>
+                </div>
+                <div class="feature feat-c">
+                    <svg viewBox="0 0 32 32" fill="none" stroke="#9B8AE0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 4h14l6 6v18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/>
+                        <polyline points="20,4 20,10 26,10"/>
+                        <line x1="10" y1="18" x2="22" y2="18"/>
+                        <line x1="10" y1="22" x2="18" y2="22"/>
+                    </svg>
+                    <div class="feature-text">请假指南</div>
+                </div>
+                <div class="feature feat-d">
+                    <svg viewBox="0 0 32 32" fill="none" stroke="#D4A838" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="26" height="18" rx="2"/>
+                        <line x1="3" y1="14" x2="29" y2="14"/>
+                        <line x1="16" y1="22" x2="16" y2="26"/>
+                        <line x1="10" y1="26" x2="22" y2="26"/>
+                    </svg>
+                    <div class="feature-text">IT办公</div>
+                </div>
+                <div class="feature feat-a">
+                    <svg viewBox="0 0 32 32" fill="none" stroke="#E8987A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="6" y="2" width="20" height="24" rx="2"/>
+                        <rect x="10" y="6" width="12" height="2" rx="1" fill="#E8987A" stroke="none"/>
+                        <rect x="10" y="10" width="12" height="2" rx="1" fill="#E8987A" stroke="none"/>
+                        <rect x="10" y="14" width="8" height="2" rx="1" fill="#E8987A" stroke="none"/>
+                        <circle cx="24" cy="24" r="4" fill="#FEF5F0" stroke="#E8987A"/>
+                        <path d="M22.5 24.5l1.5 1.5 2-2"/>
+                    </svg>
+                    <div class="feature-text">开具证明</div>
+                </div>
+            </div>
+
+            <div class="qr-wrap">
+                <div class="qr-code">
+                    <img id="qrcode" src="" alt="扫码访问">
+                </div>
+                <div class="qr-info">
+                    <div class="qr-info-title">扫一扫打开</div>
+                    <div class="qr-info-sub">微信 / 浏览器 均可访问<br>随时查看 HR 操作指引</div>
+                </div>
+            </div>
+
+            <div class="link-row" id="linkUrl">294a7a8118c342d6a5400648c9af81b2.app.codebuddy.work</div>
+
+            <div class="footer">
+                <div class="footer-dot">悦</div>
+                <div class="footer-text">
+                    <div class="footer-name">悦汇城</div>
+                    <div class="footer-slogan">让工作更简单</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="print-btn" onclick="savePoster()">保存图片</button>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        const url = 'https://294a7a8118c342d6a5400648c9af81b2.app.codebuddy.work';
+
+        function generateQR() {
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}&margin=4`;
+            document.getElementById('qrcode').src = qrUrl;
+        }
+
+        async function savePoster() {
+            const btn = document.querySelector('.print-btn');
+            btn.textContent = '生成中...';
+            btn.disabled = true;
+            try {
+                const canvas = await html2canvas(document.getElementById('poster'), {
+                    scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#FFFEF9'
+                });
+                const link = document.createElement('a');
+                link.download = 'HR助手-分享海报.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                btn.textContent = '已保存';
+                setTimeout(() => { btn.textContent = '保存图片'; btn.disabled = false; }, 2000);
+            } catch (err) {
+                btn.textContent = '请截图保存';
+                setTimeout(() => { btn.textContent = '保存图片'; btn.disabled = false; }, 2000);
+            }
+        }
+
+        window.onload = generateQR;
+    </script>
+</body>
+</html>
