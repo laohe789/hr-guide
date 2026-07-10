@@ -762,6 +762,48 @@
   background: #c7d2fe;
   transform: translateY(-1px);
 }
+/* 小精灵联想下拉框 */
+.asst-suggest-wrap {
+  display: none;
+  margin-top: 8px;
+  text-align: left;
+}
+.asst-suggest-wrap.show { display: block; }
+.asst-suggest-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  max-height: 140px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+.asst-suggest-item {
+  display: inline-block;
+  padding: 5px 12px;
+  background: #fff;
+  border: 1px solid #c7d2fe;
+  border-radius: 16px;
+  font-size: 12.5px;
+  color: #4338CA;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.asst-suggest-item:hover {
+  background: #c7d2fe;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(99,102,241,0.15);
+}
+.asst-suggest-cat {
+  font-size: 11px;
+  color: #a5b4fc;
+  text-align: center;
+  padding: 3px 0 6px;
+}
 .assistant-chat-area {
   display: none;
   max-height: 260px;
@@ -1692,9 +1734,11 @@
       <div class="assistant-subtitle">关于考勤、请假、转正等HR问题，都可以问我～</div>
       <div class="assistant-input-wrap">
         <input class="assistant-input" id="asst-input" placeholder="输入你的问题，快速查找答案..."
-               onkeydown="if(event.key==='Enter')assistantSend()">
+               onkeydown="if(event.key==='Enter')assistantSend()"
+               oninput="asstShowSuggestions(this.value)">
         <button class="assistant-send-btn" onclick="assistantSend()">📤</button>
       </div>
+      <div class="asst-suggest-wrap" id="asst-suggest-wrap"></div>
       <div class="assistant-tags" id="asst-tags">
         <span class="assistant-tag" onclick="assistantQuick('年假有几天')">年假有几天？</span>
         <span class="assistant-tag" onclick="assistantQuick('怎么补卡')">怎么补卡？</span>
@@ -2386,6 +2430,66 @@ const attendanceSearchAliases = {
   '怎么算': ['如何查看考勤异常', '不处理异常会怎样', '调休假怎么少了'],
   '怎么办': ['迟到了怎么办', '打卡失败怎么办', '加班时间算错了怎么办'],
 };
+
+// ========== 小精灵输入联想索引（全模块Q&A） ==========
+// 从 attendanceData / leaveData / itData 的所有条目中提取，
+// 在首页输入框输入关键词时实时联想匹配
+function buildAsstSuggestionIndex() {
+  const index = [];
+
+  // 考勤数据（57条）
+  if (typeof attendanceData !== 'undefined' && attendanceData.categories) {
+    for (const cat of attendanceData.categories) {
+      for (const item of cat.items) {
+        index.push({
+          keyword: item.keyword,
+          detail: item.detail || '',
+          category: cat.label,
+          categoryKey: cat.key,
+          module: 'attendance',
+          moduleLabel: '考勤指引'
+        });
+      }
+    }
+  }
+
+  // 请假数据
+  if (typeof leaveData !== 'undefined' && leaveData.categories) {
+    for (const cat of leaveData.categories) {
+      for (const item of cat.items) {
+        index.push({
+          keyword: item.keyword,
+          detail: item.detail || '',
+          category: cat.label,
+          categoryKey: cat.key,
+          module: 'leave',
+          moduleLabel: '请假指南'
+        });
+      }
+    }
+  }
+
+  // IT办公数据
+  if (typeof itData !== 'undefined' && itData.categories) {
+    for (const cat of itData.categories) {
+      for (const item of cat.items) {
+        index.push({
+          keyword: item.keyword,
+          detail: item.detail || '',
+          category: cat.label,
+          categoryKey: cat.key,
+          module: 'it_guide',
+          moduleLabel: 'IT办公指引'
+        });
+      }
+    }
+  }
+
+  return index;
+}
+
+// 预构建联想索引（页面加载时生成）
+const ASST_SUGGESTIONS = buildAsstSuggestionIndex();
 
 // ========== 原始考勤文档（详细视图用，一字不差） ==========
 const attendanceDocRaw = [
@@ -4251,6 +4355,9 @@ function goHome() {
   document.getElementById('detail-search-wrap').style.display = 'none';
   document.getElementById('detail-search-input').value = '';
   document.getElementById('detail-search-results').style.display = 'none';
+  // 隐藏小精灵联想框
+  const sw = document.getElementById('asst-suggest-wrap');
+  if (sw) { sw.classList.remove('show'); sw.innerHTML = ''; }
 
   // 关闭答案弹窗
   closeAnswerModal();
@@ -5358,10 +5465,113 @@ function autoSaveSession() {
   setTimeout(saveAsstSession, 100);
 }
 
+// ========== 小精灵输入联想 ==========
+let asstSuggestTimer = null;
+function asstShowSuggestions(val) {
+  const wrap = document.getElementById('asst-suggest-wrap');
+  if (!wrap) return;
+
+  // 清除之前的定时器
+  if (asstSuggestTimer) { clearTimeout(asstSuggestTimer); asstSuggestTimer = null; }
+
+  const kw = val.trim().toLowerCase();
+  if (kw.length < 1) { wrap.innerHTML = ''; wrap.classList.remove('show'); return; }
+
+  // 防抖：150ms后再搜索
+  asstSuggestTimer = setTimeout(() => {
+    const results = [];
+
+    // 1. 精确匹配 keyword 包含关键词
+    for (const item of ASST_SUGGESTIONS) {
+      if (item.keyword.toLowerCase().includes(kw)) {
+        results.push({ ...item, score: 2 });
+      }
+    }
+    // 2. 别名匹配（用 attendanceSearchAliases）
+    if (typeof attendanceSearchAliases !== 'undefined') {
+      const aliasItems = attendanceSearchAliases[kw] || [];
+      for (const kwText of aliasItems) {
+        // 避免重复
+        if (!results.some(r => r.keyword === kwText)) {
+          const found = ASST_SUGGESTIONS.find(s => s.keyword === kwText);
+          if (found) results.push({ ...found, score: 1 });
+        }
+      }
+    }
+    // 3. 分词匹配：输入的每个token都检查
+    if (results.length < 4 && kw.length >= 2) {
+      const tokens = kw.replace(/[，。？、！\s]/g, ' ').split(/\s+/).filter(t => t.length >= 2);
+      for (const token of tokens) {
+        if (results.length >= 6) break;
+        for (const item of ASST_SUGGESTIONS) {
+          if (results.length >= 6) break;
+          if (item.keyword.toLowerCase().includes(token) && !results.some(r => r.keyword === item.keyword)) {
+            results.push({ ...item, score: 0 });
+          }
+        }
+      }
+    }
+
+    // 按分数排序，最多显示8条
+    results.sort((a, b) => b.score - a.score);
+    const topResults = results.slice(0, 8);
+
+    if (topResults.length === 0) {
+      wrap.innerHTML = '';
+      wrap.classList.remove('show');
+      return;
+    }
+
+    // 按模块分组显示
+    let html = '<div class="asst-suggest-list">';
+    for (const r of topResults) {
+      html += `<span class="asst-suggest-item" data-keyword="${escapeAttr(r.keyword)}" data-module="${r.module}" title="${escapeAttr(r.keyword)}">${escapeHtml(r.keyword)}</span>`;
+    }
+    html += '</div>';
+
+    // 如果有分类信息，显示分类提示
+    const modLabels = [...new Set(topResults.map(r => r.moduleLabel))];
+    if (modLabels.length > 0) {
+      html += `<div class="asst-suggest-cat">🔍 从 ${['考勤指引','请假指南','IT办公指引'].filter(l => modLabels.includes(l)).join(' / ')} 找到 ${topResults.length} 个相关问题</div>`;
+    }
+
+    wrap.innerHTML = html;
+    wrap.classList.add('show');
+
+    // 绑定点击事件
+    wrap.querySelectorAll('.asst-suggest-item').forEach(el => {
+      el.addEventListener('click', function() {
+        const keyword = this.dataset.keyword;
+        const inputEl = document.getElementById('asst-input');
+        inputEl.value = keyword;
+        wrap.classList.remove('show');
+        assistantSend();
+      });
+    });
+  }, 150);
+}
+
+// 辅助：HTML属性转义
+function escapeAttr(s) {
+  return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// 点击页面其他区域关闭联想框
+document.addEventListener('click', function(e) {
+  const wrap = document.getElementById('asst-suggest-wrap');
+  if (wrap && !wrap.contains(e.target) && e.target.id !== 'asst-input') {
+    wrap.classList.remove('show');
+  }
+});
+
 function assistantSend() {
   const input = document.getElementById('asst-input');
   const q = input.value.trim();
   if (!q) return;
+
+  // 隐藏联想框
+  const suggestWrap = document.getElementById('asst-suggest-wrap');
+  if (suggestWrap) suggestWrap.classList.remove('show');
 
   const chat = document.getElementById('asst-chat');
   chat.classList.add('show');
