@@ -2488,9 +2488,6 @@ function buildAsstSuggestionIndex() {
   return index;
 }
 
-// 预构建联想索引（页面加载时生成）
-const ASST_SUGGESTIONS = buildAsstSuggestionIndex();
-
 // ========== 原始考勤文档（详细视图用，一字不差） ==========
 const attendanceDocRaw = [
   { type: "text", content: `考勤宝典（持续更新中）`, bold: true, heading: true },
@@ -2862,6 +2859,9 @@ const leaveData = {
     }
   ]
 };
+
+// 预构建小精灵联想索引（必须在 attendanceData / itData / leaveData 之后）
+const ASST_SUGGESTIONS = buildAsstSuggestionIndex();
 
 // 休假文档全文（详细视图用）
 const leaveDocRaw = [
