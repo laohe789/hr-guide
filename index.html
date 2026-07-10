@@ -5646,7 +5646,7 @@ function asstShowSuggestions(val) {
     // 按模块分组显示
     let html = '<div class="asst-suggest-list">';
     for (const r of topResults) {
-      html += `<span class="asst-suggest-item" data-keyword="${escapeAttr(r.keyword)}" data-module="${r.module}" title="${escapeAttr(r.keyword)}">${escapeHtml(r.keyword)}</span>`;
+      html += `<span class="asst-suggest-item" data-keyword="${escapeAttr(r.keyword)}" data-detail="${escapeAttr(r.detail || '')}" data-category="${escapeAttr(r.category || '')}" data-module="${r.module}" title="${escapeAttr(r.keyword)}">${escapeHtml(r.keyword)}</span>`;
     }
     html += '</div>';
 
@@ -5659,17 +5659,71 @@ function asstShowSuggestions(val) {
     wrap.innerHTML = html;
     wrap.classList.add('show');
 
-    // 绑定点击事件
+    // 绑定点击事件 — 直接显示答案，不走重新搜索
     wrap.querySelectorAll('.asst-suggest-item').forEach(el => {
       el.addEventListener('click', function() {
         const keyword = this.dataset.keyword;
-        const inputEl = document.getElementById('asst-input');
-        inputEl.value = keyword;
-        wrap.classList.remove('show');
-        assistantSend();
+        const detail = this.dataset.detail || '';
+        const category = this.dataset.category || '';
+        const module = this.dataset.module || '';
+        asstSendDirectAnswer(keyword, detail, category, module);
       });
     });
   }, 150);
+}
+
+// 点击建议项直接显示答案（不走重新搜索，避免被INTENT_DEFS多轮对话截胡）
+function asstSendDirectAnswer(keyword, detail, category, module) {
+  const input = document.getElementById('asst-input');
+  input.value = '';
+
+  // 隐藏联想框
+  const suggestWrap = document.getElementById('asst-suggest-wrap');
+  if (suggestWrap) suggestWrap.classList.remove('show');
+
+  const chat = document.getElementById('asst-chat');
+  chat.classList.add('show');
+
+  // 用户消息（显示点击的关键词）
+  const userMsg = `<div class="assistant-msg user">
+    <div class="msg-content">${escapeHtml(keyword)}</div>
+    <div class="msg-avatar">👤</div>
+  </div>`;
+  chat.insertAdjacentHTML('beforeend', userMsg);
+
+  // 思考动画
+  const thinkingMsg = `<div class="assistant-msg bot" id="asst-thinking">
+    <div class="msg-avatar">${ASST_SPRITE}</div>
+    <div class="msg-content">💭 正在查找...</div>
+  </div>`;
+  chat.insertAdjacentHTML('beforeend', thinkingMsg);
+
+  setTimeout(() => {
+    document.getElementById('asst-thinking')?.remove();
+
+    // 组装答案：直接显示 detail，不走重新搜索
+    let answerHtml = escapeHtml(detail).replace(/\n/g, '<br>');
+
+    // 如果有关联到具体模块/分类，加上导航提示
+    if (module && category) {
+      const navLabels = { attendance: '考勤指引', leave: '请假指南', it_guide: 'IT办公指引', account: '账号开通', promotion: '员工转正', resign: '员工离职', certificate: '我要开证明' };
+      const navLabel = navLabels[module] || '详情';
+      answerHtml += `<div style="margin-top:12px;padding-top:8px;border-top:1px dashed #e5e7eb;font-size:12px;color:#6b7280;">📍 来源：${escapeHtml(navLabel)} · ${escapeHtml(category)}</div>`;
+    }
+
+    const botMsg = `<div class="assistant-msg bot">
+      <div class="msg-avatar">${ASST_SPRITE}</div>
+      <div class="msg-content">${answerHtml}</div>
+    </div>`;
+    chat.insertAdjacentHTML('beforeend', botMsg);
+    chat.scrollTop = chat.scrollHeight;
+
+    // 保存上下文
+    asstMemory.messages.push({ role: 'user', text: keyword });
+    asstMemory.messages.push({ role: 'bot', text: detail.replace(/\n/g, ' ') });
+    asstMemory.lastTopic = keyword;
+    setTimeout(saveAsstSession, 100);
+  }, 400);
 }
 
 // 辅助：HTML属性转义
