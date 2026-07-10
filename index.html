@@ -5701,14 +5701,15 @@ function asstSendDirectAnswer(keyword, detail, category, module) {
   setTimeout(() => {
     document.getElementById('asst-thinking')?.remove();
 
-    // 组装答案：直接显示 detail，不走重新搜索
-    let answerHtml = escapeHtml(detail).replace(/\n/g, '<br>');
+    // 组装答案：直接显示 detail（来自我们的数据源，不是用户输入，所以直接 innerHTML 渲染）
+    let answerHtml = detail || '暂无详细答案。';
 
-    // 如果有关联到具体模块/分类，加上导航提示
+    // 如果有关联到具体模块/分类，加上来源标注和原文跳转
     if (module && category) {
       const navLabels = { attendance: '考勤指引', leave: '请假指南', it_guide: 'IT办公指引', account: '账号开通', promotion: '员工转正', resign: '员工离职', certificate: '我要开证明' };
       const navLabel = navLabels[module] || '详情';
       answerHtml += `<div style="margin-top:12px;padding-top:8px;border-top:1px dashed #e5e7eb;font-size:12px;color:#6b7280;">📍 来源：${escapeHtml(navLabel)} · ${escapeHtml(category)}</div>`;
+      answerHtml += `<div style="margin-top:6px;"><a href="javascript:void(0)" onclick="switchToDetail('${module}');initDetailSearch('${module}');document.getElementById('asst-chat').scrollTop=0;" style="color:#534AB7;font-size:12px;text-decoration:underline;">📖 查看原文 &rarr;</a></div>`;
     }
 
     const botMsg = `<div class="assistant-msg bot">
