@@ -5312,11 +5312,19 @@ function searchQAExactMatch(originalQ, kw, matchedIntent) {
   const sources = [];
   const intent = (matchedIntent || {}).intent || '';
 
+  // 提取用户输入中的关键实词（≥2字，过滤虚词）
+  const keyTerms = originalQ.replace(/的|吗|呢|呀|啊|怎么|什么|哪|如何|是否|要|不|没|能|可以|需要|应该|请问|还|了|是|有|我|这|那|个|到|在|为|和|或|但|如果|因为|所以/g, ' ')
+    .split(/\s+/).filter(t => t.length >= 2);
+
   if (intent === 'attendance' || intent === 'late' || intent === 'overtime' || intent === 'leave' ||
       kw.includes('打卡') || kw.includes('请假') || kw.includes('迟到') || kw.includes('补卡') ||
       kw.includes('缺卡') || kw.includes('忘打') || kw.includes('外勤') || kw.includes('考勤')) {
     // 考勤数据
     if (typeof attendanceData !== 'undefined' && attendanceData.categories) {
+      // ★ 把 intro 和 notice 也作为可搜索条目
+      if (attendanceData.intro) {
+        sources.push({ keyword: '到达公司必须打卡', detail: attendanceData.intro, catLabel: '入门须知', moduleLabel: '考勤指引', isIntro: true });
+      }
       for (const cat of attendanceData.categories) {
         for (const item of cat.items) {
           sources.push({ keyword: item.keyword, detail: item.detail, catLabel: cat.label, moduleLabel: '考勤指引' });
@@ -5353,26 +5361,24 @@ function searchQAExactMatch(originalQ, kw, matchedIntent) {
 
   for (const s of sources) {
     let score = 0;
+    let hitTerms = 0; // 命中了多少个不同的关键实词
     const kwl = s.keyword.toLowerCase();
-    const detailText = stripHtml(s.detail).toLowerCase();
+    const fullText = (kwl + ' ' + stripHtml(s.detail)).toLowerCase();
 
     // 关键词精确包含（最高权重）
     if (kwl.includes(kw)) score += 10;
     else if (kw.includes(s.keyword.replace(/[？?！!。]/g, '').toLowerCase())) score += 8;
 
-    // keyword 的每个token都检查
-    const qTokens = originalQ.replace(/的|吗|呢|呀|啊|怎么|什么|哪|如何|是否|要|不|没|能|可以|需要|应该|请问/g, ' ').split(/\s+/).filter(t => t.length >= 1);
-    for (const t of qTokens) {
-      if (t.length < 2) continue;
-      if (kwl.includes(t)) score += 3;
-      if (detailText.includes(t)) score += 1.5;
+    // ★ 多关键词组合匹配：每个关键实词独立计分，统计命中数
+    for (const t of keyTerms) {
+      if (fullText.includes(t)) { score += 4; hitTerms++; }
     }
 
-    // 分词匹配（用户输入的长句拆词）
+    // 分词匹配（原有逻辑降权）
     const longTokens = kw.split(/\s+/).filter(t => t.length >= 2);
     for (const t of longTokens) {
-      if (kwl.includes(t)) score += 2;
-      if (detailText.includes(t)) score += 1;
+      if (kwl.includes(t)) score += 1;
+      if (stripHtml(s.detail).toLowerCase().includes(t)) score += 0.5;
     }
 
     // 别名映射加分
@@ -5383,6 +5389,10 @@ function searchQAExactMatch(originalQ, kw, matchedIntent) {
         }
       }
     }
+
+    // ★ 多词命中率加成：命中的实词越多，额外加成越大
+    if (hitTerms >= 2) score += hitTerms * 3;
+    if (hitTerms >= keyTerms.length * 0.6 && keyTerms.length >= 2) score += 10; // 大部分词都命中 → 强匹配
 
     if (score > bestScore) { bestScore = score; best = s; }
   }
