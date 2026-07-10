@@ -5312,9 +5312,16 @@ function searchQAExactMatch(originalQ, kw, matchedIntent) {
   const sources = [];
   const intent = (matchedIntent || {}).intent || '';
 
-  // 提取用户输入中的关键实词（≥2字，过滤虚词）
-  const keyTerms = originalQ.replace(/的|吗|呢|呀|啊|怎么|什么|哪|如何|是否|要|不|没|能|可以|需要|应该|请问|还|了|是|有|我|这|那|个|到|在|为|和|或|但|如果|因为|所以/g, ' ')
+  // 提取用户输入中的关键实词（≥2字，过滤虚词，长词拆2字滑窗）
+  const rawTerms = originalQ.replace(/的|吗|呢|呀|啊|怎么|什么|哪|如何|是否|要|不|没|能|可以|需要|应该|请问|还|了|是|有|我|这|那|个|到|在|为|和|或|但|如果|因为|所以/g, ' ')
     .split(/\s+/).filter(t => t.length >= 2);
+  const keyTerms = [];
+  for (const t of rawTerms) {
+    if (t.length <= 2) { keyTerms.push(t); }
+    else {
+      for (let i = 0; i <= t.length - 2; i++) { keyTerms.push(t.slice(i, i + 2)); }
+    }
+  }
 
   if (intent === 'attendance' || intent === 'late' || intent === 'overtime' || intent === 'leave' ||
       kw.includes('打卡') || kw.includes('请假') || kw.includes('迟到') || kw.includes('补卡') ||
@@ -5323,7 +5330,7 @@ function searchQAExactMatch(originalQ, kw, matchedIntent) {
     if (typeof attendanceData !== 'undefined' && attendanceData.categories) {
       // ★ 把 intro 和 notice 也作为可搜索条目
       if (attendanceData.intro) {
-        sources.push({ keyword: '到达公司必须打卡', detail: attendanceData.intro, catLabel: '入门须知', moduleLabel: '考勤指引', isIntro: true });
+        sources.push({ keyword: '到达公司必须打卡 请假打卡规则', detail: attendanceData.intro, catLabel: '入门须知', moduleLabel: '考勤指引', isIntro: true });
       }
       for (const cat of attendanceData.categories) {
         for (const item of cat.items) {
@@ -5390,9 +5397,9 @@ function searchQAExactMatch(originalQ, kw, matchedIntent) {
       }
     }
 
-    // ★ 多词命中率加成：命中的实词越多，额外加成越大
+    // ★ 多词命中率加成：命中至少2个不同实词即算强匹配
     if (hitTerms >= 2) score += hitTerms * 3;
-    if (hitTerms >= keyTerms.length * 0.6 && keyTerms.length >= 2) score += 10; // 大部分词都命中 → 强匹配
+    if (hitTerms >= 2 && keyTerms.length >= 2) score += 10; // 命中2个及以上 → 强匹配
 
     if (score > bestScore) { bestScore = score; best = s; }
   }
