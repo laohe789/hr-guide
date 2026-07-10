@@ -5306,6 +5306,105 @@ function detectNegation(rawQ, normalizedKw) {
   return penalized;
 }
 
+// ========== Q&A 精确匹配：从考勤/请假/IT数据中搜索最相关的原始答案 ==========
+function searchQAExactMatch(originalQ, kw, matchedIntent) {
+  // 根据命中的意图决定搜索哪些数据源
+  const sources = [];
+  const intent = (matchedIntent || {}).intent || '';
+
+  if (intent === 'attendance' || intent === 'late' || intent === 'overtime' || intent === 'leave' ||
+      kw.includes('打卡') || kw.includes('请假') || kw.includes('迟到') || kw.includes('补卡') ||
+      kw.includes('缺卡') || kw.includes('忘打') || kw.includes('外勤') || kw.includes('考勤')) {
+    // 考勤数据
+    if (typeof attendanceData !== 'undefined' && attendanceData.categories) {
+      for (const cat of attendanceData.categories) {
+        for (const item of cat.items) {
+          sources.push({ keyword: item.keyword, detail: item.detail, catLabel: cat.label, moduleLabel: '考勤指引' });
+        }
+      }
+    }
+  }
+  if (intent === 'leave' || kw.includes('请假') || kw.includes('年假') || kw.includes('病假') ||
+      kw.includes('事假') || kw.includes('婚假') || kw.includes('产假') || kw.includes('调休')) {
+    // 请假数据
+    if (typeof leaveData !== 'undefined' && leaveData.categories) {
+      for (const cat of leaveData.categories) {
+        for (const item of cat.items) {
+          sources.push({ keyword: item.keyword, detail: item.detail, catLabel: cat.label, moduleLabel: '请假指南' });
+        }
+      }
+    }
+  }
+  if (kw.includes('it') || kw.includes('电脑') || kw.includes('wifi') || kw.includes('打印机') || kw.includes('网络')) {
+    // IT数据
+    if (typeof itData !== 'undefined' && itData.categories) {
+      for (const cat of itData.categories) {
+        for (const item of cat.items) {
+          sources.push({ keyword: item.keyword, detail: item.detail, catLabel: cat.label, moduleLabel: 'IT办公指引' });
+        }
+      }
+    }
+  }
+
+  if (sources.length === 0) return null;
+
+  let best = null;
+  let bestScore = 0;
+
+  for (const s of sources) {
+    let score = 0;
+    const kwl = s.keyword.toLowerCase();
+    const detailText = stripHtml(s.detail).toLowerCase();
+
+    // 关键词精确包含（最高权重）
+    if (kwl.includes(kw)) score += 10;
+    else if (kw.includes(s.keyword.replace(/[？?！!。]/g, '').toLowerCase())) score += 8;
+
+    // keyword 的每个token都检查
+    const qTokens = originalQ.replace(/的|吗|呢|呀|啊|怎么|什么|哪|如何|是否|要|不|没|能|可以|需要|应该|请问/g, ' ').split(/\s+/).filter(t => t.length >= 1);
+    for (const t of qTokens) {
+      if (t.length < 2) continue;
+      if (kwl.includes(t)) score += 3;
+      if (detailText.includes(t)) score += 1.5;
+    }
+
+    // 分词匹配（用户输入的长句拆词）
+    const longTokens = kw.split(/\s+/).filter(t => t.length >= 2);
+    for (const t of longTokens) {
+      if (kwl.includes(t)) score += 2;
+      if (detailText.includes(t)) score += 1;
+    }
+
+    // 别名映射加分
+    if (typeof attendanceSearchAliases !== 'undefined') {
+      for (const aliasKw in attendanceSearchAliases) {
+        if (kw.includes(aliasKw) && attendanceSearchAliases[aliasKw].some(a => a === s.keyword)) {
+          score += 5;
+        }
+      }
+    }
+
+    if (score > bestScore) { bestScore = score; best = s; }
+  }
+
+  // 阈值：至少有一个token命中才算有效匹配
+  if (!best || bestScore < 3) return null;
+
+  // 构造答案文本
+  let answer = '';
+  if (bestScore >= 8) {
+    // 高分匹配：直接返回具体答案，标注来源分类
+    answer = `${best.keyword}\n\n${stripHtml(best.detail)}\n\n💡 更多细节可点击首页「${best.moduleLabel}」→「${best.catLabel}」查看～`;
+  } else if (bestScore >= 4) {
+    // 中等匹配：返回答案 + 提示可能相关问题
+    answer = `找到相关问题「${best.keyword}」：\n\n${stripHtml(best.detail)}\n\n📂 来自 ${best.moduleLabel} - ${best.catLabel}\n\n💡 更多问题可点击首页对应模块卡片查看～`;
+  } else {
+    // 低分匹配但超过阈值：作为补充信息
+    answer = `你可能想问的是「${best.keyword}」：\n\n${stripHtml(best.detail)}\n\n📂 ${best.moduleLabel} - ${best.catLabel}`;
+  }
+  return answer;
+}
+
 function assistantGetAnswer(q) {
   // 先做称呼归一化
   const kw = normalizeSlang(q.toLowerCase());
@@ -5352,12 +5451,17 @@ function assistantGetAnswer(q) {
     }
   }
 
-  // 存记忆
+  // 存记忆 + Q&A精确匹配层（优先返回具体Q&A答案）
   if (bestIntent && bestScore >= 2) {
     asstMemory.lastIntent = bestIntent.intent;
     asstMemory.lastTopic = bestIntent.leadTo;
     asstMemory.turns.push({ q, intent: bestIntent.intent, time: Date.now() });
     if (asstMemory.turns.length > 10) asstMemory.turns.shift();
+
+    // 尝试从考勤/请假/IT数据中找更精确的Q&A匹配
+    const qaMatch = searchQAExactMatch(q, kw, bestIntent);
+    if (qaMatch) return qaMatch;
+
     return bestIntent.answer;
   }
 
