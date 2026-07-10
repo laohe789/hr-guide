@@ -1420,6 +1420,8 @@
 .detail-search-result-item:last-child { border-bottom: none; }
 .detail-search-result-item:hover { background: var(--primary-light); }
 .detail-search-result-item .sr-cat { font-size: 11px; color: var(--primary); font-weight: 600; margin-bottom: 2px; }
+.detail-search-result-item .sr-title { font-weight: 500; line-height: 1.4; }
+.detail-search-result-item .sr-preview { font-size: 12px; color: var(--text-muted); margin-top: 4px; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .detail-search-no-result { padding: 20px 16px; text-align: center; color: var(--text-muted); font-size: 13px; }
 .search-highlight {
   background: #FDE68A;
@@ -1427,6 +1429,83 @@
   border-radius: 2px;
   font-weight: 600;
 }
+/* ===== Q&A 答案弹窗 ===== */
+.answer-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: amFadeIn 0.2s ease;
+}
+.answer-modal-overlay.show { display: flex; }
+@keyframes amFadeIn { from { opacity: 0; } to { opacity: 1; } }
+.answer-modal {
+  background: var(--card-bg);
+  border-radius: 16px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  animation: amSlideUp 0.25s ease;
+}
+@keyframes amSlideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.answer-modal-header {
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.answer-modal-cat {
+  font-size: 12px;
+  color: var(--primary);
+  font-weight: 600;
+  background: var(--primary-light);
+  padding: 2px 10px;
+  border-radius: 20px;
+  display: inline-block;
+  margin-bottom: 6px;
+}
+.answer-modal-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.4;
+}
+.answer-modal-close {
+  flex-shrink: 0;
+  width: 32px; height: 32px;
+  border: none;
+  background: var(--border);
+  border-radius: 50%;
+  font-size: 18px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.answer-modal-close:hover { background: var(--primary-light); color: var(--primary); }
+.answer-modal-body {
+  padding: 16px 20px 20px;
+  overflow-y: auto;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text);
+}
+.answer-modal-body b { color: var(--primary); }
+.answer-modal-body .att-warn { color: #dc2626; font-weight: 600; }
+.answer-modal-body .att-hl { background: #FEF3C7; padding: 1px 4px; border-radius: 3px; font-weight: 600; }
+.answer-modal-body br + br { display: block; margin-top: 8px; }
 /* ===== 附件下载卡片 ===== */
 .att-dl-item {
   display: flex;
@@ -1468,6 +1547,33 @@
 }
 .att-dl-item:hover .att-dl-btn {
   background: #4338CA;
+}
+
+/* 密码点击复制按钮 */
+.pwd-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  background: #f0eeff;
+  border: 1px dashed #534AB7;
+  border-radius: 4px;
+  color: #534AB7;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s;
+}
+.pwd-copy:hover {
+  background: #e0dbff;
+  border-color: #4338CA;
+  color: #4338CA;
+}
+.pwd-copy.copied {
+  background: #d4edda;
+  border-color: #28a745;
+  color: #28a745;
 }
 .att-section-title {
   font-size: 13px;
@@ -1583,7 +1689,7 @@
     <div class="assistant-card" id="assistant-card">
       <div class="assistant-avatar"><svg viewBox="0 0 64 64"><defs><linearGradient id="spG" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#a5b4fc"/><stop offset="100%" stop-color="#6366f1"/></linearGradient></defs><ellipse cx="32" cy="38" rx="14" ry="16" fill="url(#spG)"/><circle cx="26" cy="34" r="3.5" fill="#fff" opacity="0.9"/><circle cx="38" cy="34" r="3.5" fill="#fff" opacity="0.9"/><circle cx="27" cy="35" r="1.5" fill="#3730a3"/><circle cx="39" cy="35" r="1.5" fill="#3730a3"/><path d="M27 42 Q32 47 37 42" stroke="#3730a3" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M18 28 C12 20 16 10 22 8" stroke="url(#spG)" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.7"/><path d="M46 28 C52 20 48 10 42 8" stroke="url(#spG)" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.7"/><circle cx="38" cy="10" r="2" fill="#fde68a" opacity="0.8"/><circle cx="26" cy="14" r="1.5" fill="#fde68a" opacity="0.6"/><circle cx="44" cy="16" r="1" fill="#fde68a" opacity="0.5"/></svg></div>
       <div class="assistant-greeting">你好！我是 HR小助手</div>
-      <div class="assistant-subtitle">关于考勤、请假、转正、离职等HR问题，都可以问我～</div>
+      <div class="assistant-subtitle">关于考勤、请假、转正等HR问题，都可以问我～</div>
       <div class="assistant-input-wrap">
         <input class="assistant-input" id="asst-input" placeholder="输入你的问题，快速查找答案..."
                onkeydown="if(event.key==='Enter')assistantSend()">
@@ -1593,7 +1699,6 @@
         <span class="assistant-tag" onclick="assistantQuick('年假有几天')">年假有几天？</span>
         <span class="assistant-tag" onclick="assistantQuick('怎么补卡')">怎么补卡？</span>
         <span class="assistant-tag" onclick="assistantQuick('转正要多久')">转正要多久？</span>
-        <span class="assistant-tag" onclick="assistantQuick('离职流程')">离职流程是什么？</span>
       </div>
       <div class="assistant-chat-area" id="asst-chat"></div>
     </div>
@@ -2190,6 +2295,98 @@ const attendanceData = {
   ]
 };
 
+// ========== 考勤搜索别名映射（让搜索更智能） ==========
+const attendanceSearchAliases = {
+  '异常': ['如何查看考勤异常', '不处理异常会怎样', '如何确认打卡成功'],
+  '考勤异常': ['如何查看考勤异常', '不处理异常会怎样'],
+  '查看异常': ['如何查看考勤异常'],
+  '怎么知道异常': ['如何查看考勤异常'],
+  '迟到': ['迟到了怎么办', '迟到补卡超次数', '外勤/请假后下午打卡显示迟到'],
+  '晚到': ['迟到了怎么办'],
+  '来晚了': ['迟到了怎么办'],
+  '上班晚': ['迟到了怎么办'],
+  '迟到怎么办': ['迟到了怎么办'],
+  '迟到10分钟': ['迟到了怎么办'],
+  '迟到1小时': ['迟到了怎么办'],
+  '迟到超过': ['迟到了怎么办', '迟到补卡超次数'],
+  '超次数': ['迟到补卡超次数', '不能发起补卡'],
+  '补卡次数': ['迟到补卡超次数', '不能发起补卡'],
+  '补卡用完': ['迟到补卡超次数', '不能发起补卡'],
+  '没补卡次数': ['迟到补卡超次数', '不能发起补卡'],
+  '下午迟到': ['外勤/请假后下午打卡显示迟到'],
+  '外勤迟到': ['外勤/请假后下午打卡显示迟到'],
+  '请假迟到': ['外勤/请假后下午打卡显示迟到'],
+  '缺卡': ['没打上班卡', '没打下班卡', '外勤/请假后忘打卡显示缺卡'],
+  '忘打卡': ['没打上班卡', '没打下班卡', '外勤/请假后忘打卡显示缺卡'],
+  '忘记打卡': ['没打上班卡', '没打下班卡', '外勤/请假后忘打卡显示缺卡'],
+  '没打卡': ['没打上班卡', '没打下班卡', '外勤/请假后忘打卡显示缺卡'],
+  '上班卡': ['没打上班卡', '补卡时自己填时间'],
+  '下班卡': ['没打下班卡', '补卡时自己填时间'],
+  '补卡': ['不能发起补卡', '补卡浪费了能撤销吗', '补卡时自己填时间', '缺卡/迟到可以用假期补吗', '迟到补卡超次数'],
+  '不能补卡': ['不能发起补卡'],
+  '无法补卡': ['不能发起补卡'],
+  '补卡失败': ['不能发起补卡', '补卡时自己填时间'],
+  '补卡时间': ['不能发起补卡', '补卡时自己填时间'],
+  '补卡时限': ['不能发起补卡'],
+  '次月3日': ['不能发起补卡'],
+  '补卡撤销': ['补卡浪费了能撤销吗'],
+  '撤销补卡': ['补卡浪费了能撤销吗'],
+  '补卡浪费': ['补卡浪费了能撤销吗'],
+  '假期补': ['缺卡/迟到可以用假期补吗'],
+  '调休补': ['缺卡/迟到可以用假期补吗'],
+  '抵扣': ['半天调休假能抵扣迟到吗', '缺卡/迟到可以用假期补吗'],
+  '外勤': ['外勤需要打卡/拍照吗', '申请了外勤还显示缺卡', '申请外勤但临时不外出', '外勤能否后补', '提前回来打卡显示早退'],
+  '外勤拍照': ['外勤需要打卡/拍照吗'],
+  '外勤打卡': ['外勤需要打卡/拍照吗', '申请了外勤还显示缺卡'],
+  '外勤后补': ['外勤能否后补'],
+  '补外勤': ['外勤能否后补'],
+  '外勤缺卡': ['申请了外勤还显示缺卡', '外勤/请假后忘打卡显示缺卡'],
+  '不外出': ['申请外勤但临时不外出'],
+  '西塔': ['去西塔开会不批外勤'],
+  '早退': ['提前回来打卡显示早退'],
+  '提前回来': ['提前回来打卡显示早退'],
+  '调休': ['周末加班没调休假到账', '调休假一周还没到', '为什么不批调休假', '半天调休假能抵扣迟到吗', '调休假怎么少了', '调休假期限多久', '加班调休假后来发现没到账'],
+  '调休假': ['周末加班没调休假到账', '调休假一周还没到', '为什么不批调休假', '半天调休假能抵扣迟到吗', '调休假怎么少了', '调休假期限多久', '加班调休假后来发现没到账'],
+  '调休没到': ['周末加班没调休假到账', '调休假一周还没到', '加班调休假后来发现没到账'],
+  '调休不批': ['为什么不批调休假'],
+  '调休抵扣': ['半天调休假能抵扣迟到吗'],
+  '调休少': ['调休假怎么少了'],
+  '调休期限': ['调休假期限多久'],
+  '调休过期': ['调休假期限多久', '加班调休假后来发现没到账'],
+  '请假': ['怎么不能请假', '哪些情况可以后补请假', '请XX假需要什么资料/多少天', '请了假不想休/请错日期', '不同假期组合显示旷工'],
+  '不能请假': ['怎么不能请假'],
+  '请假失败': ['怎么不能请假'],
+  '后补请假': ['哪些情况可以后补请假'],
+  '请假资料': ['请XX假需要什么资料/多少天'],
+  '请假多少天': ['请XX假需要什么资料/多少天'],
+  '销假': ['请了假不想休/请错日期'],
+  '请错假': ['请了假不想休/请错日期'],
+  '旷工': ['不同假期组合显示旷工'],
+  '假期组合': ['不同假期组合显示旷工'],
+  '多天假': ['一次性请多天假怎么操作'],
+  '连续请假': ['一次性请多天假怎么操作'],
+  '排班': ['排班制半天假怎么选', '排班制超下班2小时打卡失败'],
+  '加班': ['工作日晚能否申请加班', '工作日加班能否后补', '为什么不批周末加班', '实际加班超出申请时间', '加班时间算错了怎么办', '周末加班横跨饭点怎么算'],
+  '工作日加班': ['工作日晚能否申请加班', '工作日加班能否后补'],
+  '周末加班': ['为什么不批周末加班', '周末加班横跨饭点怎么算'],
+  '加班后补': ['工作日加班能否后补'],
+  '加班超时': ['实际加班超出申请时间'],
+  '加班算错': ['加班时间算错了怎么办'],
+  '加班饭点': ['周末加班横跨饭点怎么算'],
+  'IT单': ['怎么发IT单 / IT单写什么'],
+  '发IT单': ['怎么发IT单 / IT单写什么'],
+  '报障': ['怎么发IT单 / IT单写什么'],
+  '故障申报': ['怎么发IT单 / IT单写什么'],
+  'IT服务台': ['怎么发IT单 / IT单写什么'],
+  '报修': ['怎么发IT单 / IT单写什么'],
+  'IT报障': ['怎么发IT单 / IT单写什么'],
+  '打卡失败': ['打卡失败怎么办', '如何确认打卡成功', '晚班加班打卡失败'],
+  '打不了卡': ['打卡失败怎么办', '排班制超下班2小时打卡失败'],
+  '打卡不成功': ['打卡失败怎么办', '如何确认打卡成功'],
+  '怎么算': ['如何查看考勤异常', '不处理异常会怎样', '调休假怎么少了'],
+  '怎么办': ['迟到了怎么办', '打卡失败怎么办', '加班时间算错了怎么办'],
+};
+
 // ========== 原始考勤文档（详细视图用，一字不差） ==========
 const attendanceDocRaw = [
   { type: "text", content: `考勤宝典（持续更新中）`, bold: true, heading: true },
@@ -2347,8 +2544,7 @@ const attendanceDocRaw = [
 // ========== 板块四：IT办公指引 ==========
 const itData = {
   title: 'IT 办公指引',
-  intro: '办公电脑配置、打印机连接、WiFi 网络及 IT 报修等常用操作指引。遇到技术问题请优先查阅本文档，<span class="att-hl">无法解决时联系 IT 服务台</span>。',
-  notice: '以下内容为示例，仅供领导审核维度方向，具体细则待确认后另行补充。',
+  intro: '办公电脑配置、打印机连接、WiFi 网络及 IT 报修等常用操作指引。',
   categories: [
     {
       key: 'computer',
@@ -2357,19 +2553,7 @@ const itData = {
       items: [
         {
           keyword: '新员工入职领用',
-          detail: '入职当天由 IT 部门统一发放办公电脑（台式机/笔记本），预装 Windows 系统、Office 办公套件、企业防病毒软件。领用时需签字确认<b>《IT 设备领用登记表》</b>，离职时原样归还。'
-        },
-        {
-          keyword: '配置标准',
-          detail: '<b>台式机：</b>i5 处理器 / 16G 内存 / 512G SSD / 双显示器<br><br><b>笔记本：</b>i7 处理器 / 16G 内存 / 512G SSD / 14 寸屏<br><br>设计/工程等特殊岗位按实际需求单独申请配置。'
-        },
-        {
-          keyword: '更换与升级',
-          detail: '电脑使用满<b>3年</b>可申请更换。因故障无法维修的，由 IT 评估后走报废换新流程。内存/硬盘升级需求提交 IT 审批。'
-        },
-        {
-          keyword: '外设申领',
-          detail: '显示器、鼠标、键盘、扩展坞等外设可向 IT 服务台申领。日常耗材（电池、网线等）可直接领取。'
+          detail: '入职当天由业务部门统一发放办公电脑-台式机，请妥善使用，离职时原样归还。'
         }
       ]
     },
@@ -2381,14 +2565,6 @@ const itData = {
         {
           keyword: '添加部门打印机',
           detail: '打开「设置 → 蓝牙和其他设备 → 打印机和扫描仪 → 添加设备」，选择对应打印机型号自动安装驱动。如搜索不到，联系 IT 协助配置 IP 地址。'
-        },
-        {
-          keyword: '常用打印机位置',
-          detail: '<b>2F 综合管理部：</b>HP LaserJet MFP（黑白打印/复印/扫描）<br><br><b>各楼层茶水间旁：</b>共享打印机（具体型号见设备标签）<br><br><b>财务部专用：</b>不对外共享'
-        },
-        {
-          keyword: '扫描文件到电脑/邮箱',
-          detail: '在打印机面板选择「扫描」→ 输入目标邮箱地址 → 放入文件 → 开始扫描。扫描件将自动发送至指定邮箱。'
         },
         {
           keyword: '常见打印问题',
@@ -2403,58 +2579,30 @@ const itData = {
       items: [
         {
           keyword: '办公 WiFi',
-          detail: '<b>SSID：</b>YHC-Office<br><b>密码：</b>【待补充】<br><b>覆盖范围：</b>全楼层办公区域'
-        },
-        {
-          keyword: '访客 WiFi',
-          detail: '<b>SSID：</b>YHC-Guest<br><b>密码：</b>【待补充】<br><br>访客网络仅提供互联网访问，无法访问公司内网系统。'
+          detail: '<b>SSID：</b>YH168<br><b>密码：</b><span class="pwd-copy" data-copy="yh20200926" data-label="YH168 密码">••••••••  [点击复制]</span><br><br><b>SSID：</b>商业管理<br><b>密码：</b><span class="pwd-copy" data-copy="yh200926" data-label="商业管理 密码">••••••••  [点击复制]</span>'
         },
         {
           keyword: '网络故障自助排查',
-          detail: '上不了网？先检查：<br>① 网线是否松动 → 重新插拔<br>② WiFi 是否误连访客网络 → 切回 YHC-Office<br>③ 重启电脑和路由器<br>④ 仍无法解决 → IT 报修'
-        }
-      ]
-    },
-    {
-      key: 'itsm',
-      label: 'IT 报修与服务台',
-      icon: '🔧',
-      items: [
-        {
-          keyword: '报修方式',
-          detail: '<b>工单系统：</b>【待补充】<br><b>IT 服务电话：</b>【待补充】<br><b>企业微信：</b>搜索「IT 服务台」提交报修<br><b>现场支持：</b>2F IT 办公室'
-        },
-        {
-          keyword: '报修范围',
-          detail: '电脑故障（无法开机、蓝屏、卡顿）<br>打印机故障<br>网络不通<br>软件安装/卸载<br>账号权限<br>邮箱问题'
-        },
-        {
-          keyword: '响应时效',
-          detail: '<b>紧急故障（全员受影响）：</b>1 小时内响应<br><b>一般故障（个人故障）：</b>4 小时内响应<br><br>报修时请说明：<b>姓名 + 工位 + 问题描述 + 是否影响工作</b>'
+          detail: '上不了网？先检查：<br>① 网线是否松动 → 重新插拔<br>② WiFi 是否误连其他网络 → 切回 YH168 或商业管理<br>③ 重启电脑和路由器<br>④ 仍无法解决 → IT 报修'
         }
       ]
     }
   ]
 };
 
-// IT 原始文档全文（经典视图用）—— 待正式内容确认后补充
+// IT 原始文档全文（经典视图用）
 const itDocRaw = [
-  { type: "text", content: "【示例】以下内容仅供领导审核维度方向，具体细则待确认后另行补充。", bold: true, heading: true },
   { type: "text", content: "一、电脑配置", bold: false, heading: true },
-  { type: "text", content: "新员工入职当天由 IT 部门统一发放办公电脑（台式机/笔记本），预装 Windows 系统、Office 办公套件、企业防病毒软件。领用时需签字确认《IT 设备领用登记表》，离职时原样归还。", bold: false, heading: false },
-  { type: "text", content: "配置标准：台式机 i5/16G/512G SSD/双显示器；笔记本 i7/16G/512G SSD/14寸屏。设计/工程等特殊岗位按实际需求单独申请配置。", bold: false, heading: false },
-  { type: "text", content: "电脑使用满3年可申请更换。因故障无法维修的，由 IT 评估后走报废换新流程。外设（显示器、鼠标、键盘、扩展坞）可向 IT 服务台申领。", bold: false, heading: false },
+  { type: "text", content: "入职当天由业务部门统一发放办公电脑-台式机，请妥善使用，离职时原样归还。", bold: false, heading: false },
   { type: "text", content: "二、打印机连接", bold: false, heading: true },
   { type: "text", content: "添加部门打印机：打开「设置 → 蓝牙和其他设备 → 打印机和扫描仪 → 添加设备」，选择对应打印机型号自动安装驱动。如搜索不到，联系 IT 协助配置 IP 地址。", bold: false, heading: false },
-  { type: "text", content: "常用打印机：2F 综合管理部 HP LaserJet MFP（黑白打印/复印/扫描）；各楼层茶水间旁共享打印机。财务部专用打印机不对外共享。", bold: false, heading: false },
-  { type: "text", content: "扫描文件：在打印机面板选择「扫描」→ 输入目标邮箱地址 → 放入文件 → 开始扫描。", bold: false, heading: false },
+  { type: "text", content: "常见打印问题：打印不出纸？检查纸张是否放好、是否卡纸。打印模糊？更换硒鼓/墨盒。连接不上打印机？重启打印机和电脑，仍不行联系 IT。", bold: false, heading: false },
   { type: "text", content: "三、WiFi / 网络", bold: false, heading: true },
-  { type: "text", content: "办公 WiFi：YHC-Office，密码【待补充】；访客 WiFi：YHC-Guest，密码【待补充】。访客网络仅提供互联网访问，无法访问公司内网系统。", bold: false, heading: false },
-  { type: "text", content: "网络故障排查：① 网线是否松动 ② WiFi 是否误连访客网络 ③ 重启电脑和路由器 ④ 仍无法解决则 IT 报修。", bold: false, heading: false },
-  { type: "text", content: "四、IT 报修与服务台", bold: false, heading: true },
-  { type: "text", content: "报修方式：工单系统【待补充】、IT 服务电话【待补充】、企业微信搜索「IT 服务台」。现场支持：2F IT 办公室。", bold: false, heading: false },
-  { type: "text", content: "报修范围：电脑故障、打印机故障、网络不通、软件安装/卸载、账号权限、邮箱问题。", bold: false, heading: false },
-  { type: "text", content: "响应时效：紧急故障1小时内响应，一般故障4小时内响应。报修时请说明：姓名 + 工位 + 问题描述 + 是否影响工作。", bold: false, heading: false }
+  { type: "text", content: "办公 WiFi — SSID：YH168，密码：", bold: false, heading: false },
+  { type: "copy", label: "YH168 密码", value: "yh20200926" },
+  { type: "text", content: "SSID：商业管理，密码：", bold: false, heading: false },
+  { type: "copy", label: "商业管理 密码", value: "yh200926" },
+  { type: "text", content: "网络故障排查：① 网线是否松动 ② WiFi 是否误连其他网络 ③ 重启电脑和路由器 ④ 仍无法解决则 IT 报修。", bold: false, heading: false }
 ];
 
 // ========== 板块五：请假指南（请假管理细则）==========
@@ -3237,6 +3385,8 @@ function renderItClassic(container) {
   for (const b of itDocRaw) {
     if (b.heading) {
       html += '<div class="att-doc-heading">' + esc(b.content) + '</div>';
+    } else if (b.type === 'copy') {
+      html += '<span class="pwd-copy" data-copy="' + esc(b.value) + '">••••••••  [点击复制]</span>';
     } else {
       html += '<div class="att-doc-item">' + esc(b.content) + '</div>';
     }
@@ -3841,15 +3991,16 @@ function initDetailSearch(moduleKey) {
   // 构建搜索索引
   let searchIndex = [];
   if (moduleKey === 'attendance') {
-    // 考勤：搜索全部7类
+    // 考勤：搜索全部7类，搜索文本包含分类标签
     for (const cat of attendanceData.categories) {
       for (const item of cat.items) {
         searchIndex.push({
-          text: item.keyword + ' ' + stripHtml(item.detail),
+          text: cat.label + ' ' + item.keyword + ' ' + stripHtml(item.detail),
           cat: cat.label,
           catKey: cat.key,
           keyword: item.keyword,
           detail: item.detail,
+          module: 'attendance',
         });
       }
     }
@@ -3872,11 +4023,12 @@ function initDetailSearch(moduleKey) {
     for (const cat of leaveData.categories) {
       for (const item of cat.items) {
         searchIndex.push({
-          text: item.keyword + ' ' + stripHtml(item.detail),
+          text: cat.label + ' ' + item.keyword + ' ' + stripHtml(item.detail),
           cat: cat.label,
           catKey: cat.key,
           keyword: item.keyword,
           detail: item.detail,
+          module: 'leave',
         });
       }
     }
@@ -3884,11 +4036,12 @@ function initDetailSearch(moduleKey) {
     for (const cat of itData.categories) {
       for (const item of cat.items) {
         searchIndex.push({
-          text: item.keyword + ' ' + stripHtml(item.detail),
+          text: cat.label + ' ' + item.keyword + ' ' + stripHtml(item.detail),
           cat: cat.label,
           catKey: cat.key,
           keyword: item.keyword,
           detail: item.detail,
+          module: 'it_guide',
         });
       }
     }
@@ -3901,7 +4054,52 @@ function initDetailSearch(moduleKey) {
 
     if (!kw) { results.style.display = 'none'; return; }
 
-    const matches = searchIndex.filter(item => item.text.toLowerCase().includes(kw));
+    // 智能匹配：直接匹配 → 别名匹配 → 分词匹配
+    let matches = searchIndex.filter(item => item.text.toLowerCase().includes(kw));
+
+    // 去重辅助
+    const seenKeywords = new Set(matches.map(m => m.keyword));
+
+    // 别名匹配（考勤模块）
+    if (moduleKey === 'attendance' && attendanceSearchAliases) {
+      const aliasKey = kw;
+      // 精确别名匹配
+      if (attendanceSearchAliases[aliasKey]) {
+        for (const kwText of attendanceSearchAliases[aliasKey]) {
+          if (!seenKeywords.has(kwText)) {
+            const found = searchIndex.find(item => item.keyword === kwText && item.module === 'attendance');
+            if (found) { matches.push(found); seenKeywords.add(kwText); }
+          }
+        }
+      }
+      // 模糊别名匹配（别名key包含搜索词 或 搜索词包含别名key）
+      for (const [aliasKey, kwList] of Object.entries(attendanceSearchAliases)) {
+        if (aliasKey === kw) continue; // 已处理
+        if (aliasKey.includes(kw) || kw.includes(aliasKey)) {
+          for (const kwText of kwList) {
+            if (!seenKeywords.has(kwText)) {
+              const found = searchIndex.find(item => item.keyword === kwText && item.module === 'attendance');
+              if (found) { matches.push(found); seenKeywords.add(kwText); }
+            }
+          }
+        }
+      }
+    }
+
+    // 分词匹配（输入整句时，按2字滑窗拆分匹配）
+    if (matches.length < 3 && kw.length >= 3) {
+      for (let i = 0; i <= kw.length - 2; i++) {
+        const token = kw.substring(i, i + 2);
+        if (token.length < 2) continue;
+        const tokenMatches = searchIndex.filter(item =>
+          !seenKeywords.has(item.keyword) && item.text.toLowerCase().includes(token)
+        );
+        for (const m of tokenMatches) {
+          matches.push(m);
+          seenKeywords.add(m.keyword);
+        }
+      }
+    }
 
     if (matches.length === 0) {
       results.innerHTML = '<div class="detail-search-no-result">未找到匹配内容，请尝试其他关键词</div>';
@@ -3912,31 +4110,46 @@ function initDetailSearch(moduleKey) {
           new RegExp('(' + kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi'),
           '<span class="search-highlight">$1</span>'
         );
-        html += '<div class="detail-search-result-item" data-cat="' + (m.catKey || '') + '" data-keyword="' + esc(m.keyword) + '">'
+        // 答案预览（截取前80字纯文本）
+        var preview = '';
+        if (m.detail) {
+          preview = stripHtml(m.detail).substring(0, 80);
+          if (stripHtml(m.detail).length > 80) preview += '...';
+        }
+        html += '<div class="detail-search-result-item" data-cat="' + (m.catKey || '') + '" data-keyword="' + esc(m.keyword) + '" data-module="' + (m.module || '') + '">'
           + '<div class="sr-cat">' + esc(m.cat) + '</div>'
-          + '<div>' + highlightedKw + '</div>'
+          + '<div class="sr-title">' + highlightedKw + '</div>'
+          + (preview ? '<div class="sr-preview">' + esc(preview) + '</div>' : '')
           + '</div>';
       }
       results.innerHTML = html;
     }
     results.style.display = 'block';
 
-    // 点击结果项跳转
+    // 点击结果项：有detail的直接弹窗显示答案，否则滚动到卡片
     results.querySelectorAll('.detail-search-result-item').forEach(el => {
       el.addEventListener('click', function() {
         const catKey = this.dataset.cat;
         const keyword = this.dataset.keyword;
         results.style.display = 'none';
 
+        // 查找搜索索引中的匹配项
+        const matchItem = searchIndex.find(item => item.keyword === keyword);
+
+        // 有detail的模块（考勤/请假/IT）：直接弹窗显示答案
+        if (matchItem && matchItem.detail) {
+          showAnswerModal(matchItem.cat, keyword, matchItem.detail);
+          return;
+        }
+
+        // 其他模块：滚动到对应卡片并高亮
         if (moduleKey === 'attendance' && detailViewMode === 'card') {
-          // 跳转到对应分类
           if (catKey && attendanceCurrentCat !== catKey) {
             attendanceCurrentCat = catKey;
             attendanceShowCategories = false;
             const target = document.getElementById('tab-attendance');
             renderAttendanceCards(target);
           }
-          // 高亮目标卡片
           setTimeout(() => {
             const cards = document.querySelectorAll('.timeline-card');
             cards.forEach(card => {
@@ -3952,71 +4165,7 @@ function initDetailSearch(moduleKey) {
               }
             });
           }, 200);
-        } else if (moduleKey === 'attendance') {
-          // 经典视图：滚动到对应文本
-          const container = document.getElementById('tab-attendance');
-          const items = container.querySelectorAll('.att-doc-item');
-          items.forEach(item => {
-            if (item.textContent.includes(keyword)) {
-              item.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              item.style.background = '#EEEDFE';
-              setTimeout(() => { item.style.background = ''; }, 2000);
-            }
-          });
-        } else if (moduleKey === 'leave' && detailViewMode === 'card') {
-          if (catKey && leaveCurrentCat !== catKey) {
-            leaveCurrentCat = catKey;
-            leaveShowCategories = false;
-            const target = document.getElementById('tab-leave');
-            renderLeaveCards(target);
-          }
-          setTimeout(() => {
-            const cards = document.querySelectorAll('.timeline-card');
-            cards.forEach(card => {
-              const title = card.querySelector('.timeline-title');
-              if (title && title.textContent.trim() === keyword) {
-                if (!card.classList.contains('expanded')) {
-                  const hdr = card.querySelector('.timeline-card-header');
-                  if (hdr) toggleCard(hdr);
-                }
-                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                card.style.boxShadow = '0 0 0 3px #534AB7';
-                setTimeout(() => { card.style.boxShadow = ''; }, 2000);
-              }
-            });
-          }, 200);
-        } else if (moduleKey === 'leave') {
-          const container = document.getElementById('tab-leave');
-          const items = container.querySelectorAll('.timeline-card');
-          items.forEach(card => {
-            const title = card.querySelector('.timeline-title');
-            if (title && title.textContent.trim().includes(keyword)) {
-              if (!card.classList.contains('expanded')) {
-                const hdr = card.querySelector('.timeline-card-header');
-                if (hdr) toggleCard(hdr);
-              }
-              card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              card.style.boxShadow = '0 0 0 3px #534AB7';
-              setTimeout(() => { card.style.boxShadow = ''; }, 2000);
-            }
-          });
-        } else if (moduleKey === 'it_guide') {
-          const container = document.getElementById('tab-it_guide');
-          const items = container.querySelectorAll('.timeline-card');
-          items.forEach(card => {
-            const title = card.querySelector('.timeline-title');
-            if (title && title.textContent.trim().includes(keyword)) {
-              if (!card.classList.contains('expanded')) {
-                const hdr = card.querySelector('.timeline-card-header');
-                if (hdr) toggleCard(hdr);
-              }
-              card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              card.style.boxShadow = '0 0 0 3px #534AB7';
-              setTimeout(() => { card.style.boxShadow = ''; }, 2000);
-            }
-          });
         } else {
-          // 其他模块：滚动到对应卡片
           setTimeout(() => {
             const cards = document.querySelectorAll('.timeline-card');
             cards.forEach(card => {
@@ -4065,12 +4214,46 @@ function clearDetailSearch() {
   results.style.display = 'none';
 }
 
+// Q&A 答案弹窗
+function showAnswerModal(cat, keyword, detail) {
+  const overlay = document.getElementById('answer-modal-overlay');
+  const catEl = document.getElementById('answer-modal-cat');
+  const titleEl = document.getElementById('answer-modal-title');
+  const bodyEl = document.getElementById('answer-modal-body');
+  catEl.textContent = cat;
+  titleEl.textContent = keyword;
+  bodyEl.innerHTML = detail;
+  overlay.classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeAnswerModal(event) {
+  // 点击overlay背景关闭（点击弹窗内容不关闭）
+  if (event && event.target && event.target.id !== 'answer-modal-overlay') return;
+  const overlay = document.getElementById('answer-modal-overlay');
+  overlay.classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+// ESC关闭答案弹窗
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    const overlay = document.getElementById('answer-modal-overlay');
+    if (overlay.classList.contains('show')) {
+      closeAnswerModal();
+    }
+  }
+});
+
 // 返回首页
 function goHome() {
   // 隐藏搜索框
   document.getElementById('detail-search-wrap').style.display = 'none';
   document.getElementById('detail-search-input').value = '';
   document.getElementById('detail-search-results').style.display = 'none';
+
+  // 关闭答案弹窗
+  closeAnswerModal();
 
   // 重置详情页模式状态
   detailViewMode = 'card';
@@ -4164,6 +4347,35 @@ function closeImageOverlay() {
 }
 document.addEventListener('click', function(e) {
   if (e.target.id === 'image-overlay') closeImageOverlay();
+  // 密码点击复制
+  const copyEl = e.target.closest('[data-copy]');
+  if (copyEl) {
+    const val = copyEl.getAttribute('data-copy');
+    navigator.clipboard.writeText(val).then(() => {
+      copyEl.classList.add('copied');
+      copyEl.textContent = '✓ 已复制';
+      setTimeout(() => {
+        copyEl.classList.remove('copied');
+        copyEl.textContent = '••••••••  [点击复制]';
+      }, 2000);
+    }).catch(() => {
+      // Fallback for older browsers
+      const ta = document.createElement('textarea');
+      ta.value = val;
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      copyEl.classList.add('copied');
+      copyEl.textContent = '✓ 已复制';
+      setTimeout(() => {
+        copyEl.classList.remove('copied');
+        copyEl.textContent = '••••••••  [点击复制]';
+      }, 2000);
+    });
+    return;
+  }
 });
 
 // ====== HR小助手 问答机器人（v2 智能语义匹配） ======
@@ -4178,7 +4390,7 @@ const ASST_SYSTEM_PROMPT = `你是「HR助手」平台的智能客服，服务�
 - 账号开通：悦工作激活、钉钉注册、初始密码、登录问题
 - 考勤指引：打卡规则、补卡流程、迟到早退、外勤报备、考勤异常
 - 请假指南：年假/病假/事假/婚假/产假/陪产假/丧假/护理假
-- IT办公指引：电脑配置、打印机、WiFi、IT报修
+- IT办公指引：电脑配置、打印机、WiFi
 - 员工转正：试用期考核、转正申请、材料、时间节点
 - 员工离职：离职流程、工作交接、手续办理、附件清单
 
@@ -4274,7 +4486,7 @@ const INTENT_DEFS = [
     intent: 'it',
     synonyms: ['电脑', '打印机', 'wifi', '网络', '报修', 'it', '驱动'],
     contextWords: ['打印', '连接', '上网', '连不上', '坏了', '故障', '服务台', '鼠标', '键盘', '显示器', '网线'],
-    answer: `IT 办公指引涵盖：\n\n💻 电脑配置 — 新员工电脑申请与标准配置\n🖨️ 打印机连接 — 部门打印机驱动安装与设置\n📶 WiFi/网络 — 公司 WiFi 连接及 VPN 配置\n🔧 IT 报修与服务台 — 故障报修渠道与联系方式\n\n💡 更多细节可以点击首页「IT办公指引」卡片查看～`,
+    answer: `IT 办公指引涵盖：\n\n💻 电脑配置 — 新员工入职电脑领用\n🖨️ 打印机连接 — 部门打印机驱动安装与常见问题\n📶 WiFi/网络 — 公司 WiFi 账号密码及故障排查\n\n💡 更多细节可以点击首页「IT办公指引」卡片查看～`,
     leadTo: 'IT办公指引'
   },
   {
@@ -4390,19 +4602,31 @@ function tryWizardRevisit(q) {
   asstState.answers = {};
   asstState.retries = 0;
   asstState.originalQuery = kw;
-  // 尝试从回访问题中解析所有步骤
+  // 尝试从回访问题中解析所有步骤（不break，继续尝试后面的步骤）
   for (let i = 0; i < wiz.steps.length; i++) {
     const sp = wiz.steps[i];
     const augmented = augmentBareNumber(kw, wizardKey, sp.key);
     const parsed = sp.parse(augmented);
     if (parsed !== null) {
       asstState.answers[sp.key] = parsed;
-      asstState.step = i + 1;
-    } else {
-      break;
     }
   }
-  if (asstState.step >= wiz.steps.length) {
+  // 检查是否可提前结束（如缺卡 wizard 选了"下班卡"直接给答案）
+  if (wiz.shouldFinish && wiz.shouldFinish(asstState)) {
+    const answer = wiz.resolve(asstState.answers);
+    asstMemory.lastIntent = wizardKey;
+    asstMemory.lastTopic = wiz.leadTo;
+    asstMemory.turns.push({ q, intent: wizardKey, wizardKey, time: Date.now() });
+    if (asstMemory.turns.length > 10) asstMemory.turns.shift();
+    resetWizard();
+    return '好的，根据新条件帮你重新算了一下：\n\n' + answer;
+  }
+  // 找到第一个未填充的步骤
+  let nextIdx = -1;
+  for (let i = 0; i < wiz.steps.length; i++) {
+    if (!(wiz.steps[i].key in asstState.answers)) { nextIdx = i; break; }
+  }
+  if (nextIdx === -1) {
     // 全部解析成功，直接出答案
     const answer = wiz.resolve(asstState.answers);
     asstMemory.lastIntent = wizardKey;
@@ -4412,9 +4636,12 @@ function tryWizardRevisit(q) {
     resetWizard();
     return '好的，根据新条件帮你重新算了一下：\n\n' + answer;
   }
-  // 还有步骤未解析，继续问
-  const nextStep = wiz.steps[asstState.step];
-  return '好的，我重新帮你看看～ ' + nextStep.ask;
+  asstState.step = nextIdx;
+  const nextStep = wiz.steps[nextIdx];
+  // 已经预填了一些步骤，给更简洁的提示
+  const filledCount = Object.keys(asstState.answers).length;
+  const prefix = filledCount > 0 ? '好的，我重新帮你看看～ ' : '好的，我重新帮你看看～ ';
+  return prefix + nextStep.ask;
 }
 
 // ====== 多轮问答向导引擎 ======
@@ -4537,15 +4764,22 @@ const WIZARD_DEFS = {
       }
       const count = parseInt(answers.count);
       const remaining = 3 - count;
-      let tip = '忘记打上班卡，请在钉钉提交补卡申请。\n';
+      // 上班卡缺卡 → 先报备HR，再补卡并备注
+      let tip = '忘记打上班卡，请按以下步骤操作：\n\n';
+      tip += '① 先向 HR 报备说明情况\n';
+      tip += '② 报备后，在钉钉提交补卡申请，并在备注中写明「忘记打卡，已报备HR」及具体原因\n';
       if (answers.reason === 'out') {
-        tip += '\n💡 外勤建议提前报备直属上级，避免后续争议。';
+        tip += '\n💡 外勤忘带手机的情况，建议同时报备直属上级。';
       }
       if (answers.reason === 'forgot') {
-        count <= 2 ? tip += '\n📝 私人原因年度2次内可补卡，下载群内登记表，备注情况，部门负责人签字。' : tip += '\n⚠️ 私人原因年度超2次，依照制度处理。';
+        if (count <= 2) {
+          tip += '\n📝 私人原因年度2次内可补卡，下载群内登记表填写，备注情况后由部门负责人签字。';
+        } else {
+          tip += '\n⚠️ 私人原因年度已超2次，依照制度处理。';
+        }
       }
       if (answers.reason === 'fault') {
-        tip += '\n💡 系统故障建议截图保留，补卡时备注具体原因。';
+        tip += '\n💡 系统故障建议截图保留，备注具体原因后提交补卡申请。';
       }
       tip += `\n\n⚠️ 每月只有3次补卡机会，最迟次月3日前处理。`;
       if (remaining > 0) {
@@ -4556,7 +4790,7 @@ const WIZARD_DEFS = {
       tip += '\n\n💡 更多细节可点击首页「考勤指引」卡片查看～';
       return tip;
     },
-    fallback: '缺卡补卡指引：\n\n📋 钉钉提交补卡申请即可\n⚠️ 每月只有3次补卡机会，最迟次月3日前处理\n💡 外勤建议提前报备直属上级\n\n💡 点击首页「考勤指引」卡片可查看详细规则～',
+    fallback: '缺卡补卡指引：\n\n📋 上班卡缺卡：先报备HR说明情况，再在钉钉提交补卡申请并备注清楚原因\n📋 下班卡缺卡：直接在钉钉提交补卡申请即可\n⚠️ 每月只有3次补卡机会，最迟次月3日前处理\n\n💡 点击首页「考勤指引」卡片可查看详细规则～',
     leadTo: '考勤指引'
   },
 
@@ -4754,26 +4988,44 @@ function tryStartWizard(kw) {
         asstState.answers = {};
         asstState.retries = 0;
         asstState.originalQuery = kw;
-        // 预检查：step 0 能否从原始问题中直接解析出答案
-        const preParse = wiz.steps[0].parse(kw);
-        if (preParse !== null) {
-          asstState.answers[wiz.steps[0].key] = preParse;
-          asstState.step = 1;
-          // 如果只有一个步骤，直接出答案
-          if (asstState.step >= wiz.steps.length) {
-            const answer = wiz.resolve(asstState.answers);
-            asstMemory.lastIntent = key;
-            asstMemory.lastTopic = wiz.leadTo;
-            asstMemory.turns.push({ q: kw, intent: key, wizardKey: key, time: Date.now() });
-            if (asstMemory.turns.length > 10) asstMemory.turns.shift();
-            resetWizard();
-            return '收到～ 根据你的描述，我帮你查了一下：\n\n' + answer;
+        // 预解析：遍历所有步骤，尽可能从用户问题中提取已给的信息
+        for (let i = 0; i < wiz.steps.length; i++) {
+          const sp = wiz.steps[i];
+          const augmented = augmentBareNumber(kw, key, sp.key);
+          const parsed = sp.parse(augmented);
+          if (parsed !== null) {
+            asstState.answers[sp.key] = parsed;
           }
-          // 跳到下一步
-          const nextStep = wiz.steps[asstState.step];
-          return '收到～ ' + nextStep.ask;
         }
-        return wiz.intro + '\n\n' + wiz.steps[0].ask;
+        // 检查是否可提前结束（如缺卡 wizard 选了"下班卡"）
+        if (wiz.shouldFinish && wiz.shouldFinish(asstState)) {
+          const answer = wiz.resolve(asstState.answers);
+          asstMemory.lastIntent = key;
+          asstMemory.lastTopic = wiz.leadTo;
+          asstMemory.turns.push({ q: kw, intent: key, wizardKey: key, time: Date.now() });
+          if (asstMemory.turns.length > 10) asstMemory.turns.shift();
+          resetWizard();
+          return '收到～ 根据你的描述，我帮你查了一下：\n\n' + answer;
+        }
+        // 找到第一个未填充的步骤
+        let startIdx = -1;
+        for (let i = 0; i < wiz.steps.length; i++) {
+          if (!(wiz.steps[i].key in asstState.answers)) { startIdx = i; break; }
+        }
+        if (startIdx === -1) {
+          // 全部预解析成功，直接出答案
+          const answer = wiz.resolve(asstState.answers);
+          asstMemory.lastIntent = key;
+          asstMemory.lastTopic = wiz.leadTo;
+          asstMemory.turns.push({ q: kw, intent: key, wizardKey: key, time: Date.now() });
+          if (asstMemory.turns.length > 10) asstMemory.turns.shift();
+          resetWizard();
+          return '收到～ 根据你的描述，我帮你查了一下：\n\n' + answer;
+        }
+        asstState.step = startIdx;
+        const filledCount = Object.keys(asstState.answers).length;
+        const nextStep = wiz.steps[startIdx];
+        return (filledCount > 0 ? '收到～ ' : wiz.intro + '\n\n') + nextStep.ask;
       }
     }
   }
@@ -4843,7 +5095,15 @@ function continueWizard(kw) {
     return answer;
   }
 
-  // 还有下一步？
+  // 还有下一步？跳过已预填充的步骤，避免重复提问
+  // 已填充的步骤来自 tryStartWizard / tryWizardRevisit 的预解析
+  while (asstState.step < wiz.steps.length) {
+    if (wiz.steps[asstState.step].key in asstState.answers) {
+      asstState.step++;
+    } else {
+      break;
+    }
+  }
   if (asstState.step < wiz.steps.length) {
     const nextStep = wiz.steps[asstState.step];
     return '收到～ ' + nextStep.ask;
@@ -5151,5 +5411,20 @@ function escapeHtml(s) {
   return d.innerHTML;
 }
 </script>
+
+<!-- Q&A 答案弹窗 -->
+<div class="answer-modal-overlay" id="answer-modal-overlay" onclick="closeAnswerModal(event)">
+  <div class="answer-modal" onclick="event.stopPropagation()">
+    <div class="answer-modal-header">
+      <div>
+        <span class="answer-modal-cat" id="answer-modal-cat"></span>
+        <div class="answer-modal-title" id="answer-modal-title"></div>
+      </div>
+      <button class="answer-modal-close" onclick="closeAnswerModal()">✕</button>
+    </div>
+    <div class="answer-modal-body" id="answer-modal-body"></div>
+  </div>
+</div>
+
 </body>
 </html>
