@@ -1485,6 +1485,72 @@
 }
 .answer-modal-overlay.show { display: flex; }
 @keyframes amFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* ===== 更新日志弹窗 ===== */
+.changelog-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.45); z-index: 9999;
+  display: none; align-items: center; justify-content: center; padding: 20px;
+  animation: amFadeIn 0.2s ease;
+}
+.changelog-overlay.show { display: flex; }
+.changelog-modal {
+  background: var(--card-bg); border-radius: 16px; max-width: 480px; width: 100%;
+  max-height: 82vh; overflow: hidden; display: flex; flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2); animation: amSlideUp 0.25s ease;
+}
+.changelog-header {
+  padding: 16px 20px 12px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+}
+.changelog-title { font-size: 15px; font-weight: 600; color: var(--text); }
+.changelog-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.changelog-close {
+  width: 28px; height: 28px; border-radius: 50%; background: #f3f4f6; border: none;
+  color: var(--text-secondary); font-size: 16px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.changelog-close:hover { background: #e5e7eb; }
+.changelog-body { padding: 16px 20px 4px; overflow: auto; }
+.cl-day { position: relative; padding-left: 18px; padding-bottom: 18px; }
+.cl-day:last-child { padding-bottom: 4px; }
+.cl-day::before {
+  content: ''; position: absolute; left: 7px; top: 13px; bottom: -4px; width: 1px; background: var(--border);
+}
+.cl-day:last-child::before { display: none; }
+.cl-day-dot { position: absolute; left: 3px; top: 4px; width: 9px; height: 9px; border-radius: 50%; background: var(--primary); }
+.cl-day-date { font-size: 13px; font-weight: 600; color: var(--text); }
+.cl-day-items { margin-top: 8px; }
+.cl-item { margin-bottom: 10px; }
+.cl-item:last-child { margin-bottom: 0; }
+.cl-tag {
+  font-size: 11px; padding: 1px 8px; border-radius: 10px; font-weight: 600;
+  display: inline-block; margin-bottom: 4px;
+}
+.cl-tag-new { background: var(--primary-light); color: var(--primary); }
+.cl-tag-opt { background: var(--info-light); color: var(--info); }
+.cl-tag-fix { background: var(--success-light); color: var(--success); }
+.cl-item-title { font-size: 13px; font-weight: 600; color: var(--text); }
+.cl-item-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-top: 2px; }
+.changelog-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 20px; border-top: 1px solid var(--border);
+}
+.cl-never { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); cursor: pointer; }
+.cl-never input { width: 14px; height: 14px; accent-color: var(--primary); cursor: pointer; }
+.changelog-btn {
+  background: var(--primary); color: #fff; border: none; border-radius: var(--radius-sm);
+  padding: 8px 22px; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.changelog-btn:hover { background: #4338A0; }
+/* 首页常驻入口 */
+.home-changelog-entry {
+  display: inline-flex; align-items: center; gap: 6px; margin: 18px auto 0;
+  font-size: 13px; color: var(--primary); background: var(--primary-light);
+  padding: 7px 16px; border-radius: 20px; cursor: pointer; font-weight: 500;
+}
+.home-changelog-entry:hover { background: #E0DDFB; }
+
 .answer-modal {
   background: var(--card-bg);
   border-radius: 16px;
@@ -1792,6 +1858,8 @@
         <div class="module-badge badge-gray">敬请期待</div>
       </div>
     </div>
+
+    <div class="home-changelog-entry" onclick="showChangelog()">📋 更新日志</div>
   </div>
 </div>
 
@@ -1876,6 +1944,24 @@
     <button class="image-popup-close" onclick="closeImageOverlay()">&times;</button>
     <img id="image-popup-img" src="" alt="">
     <div class="image-popup-caption" id="image-popup-caption"></div>
+  </div>
+</div>
+
+<!-- 更新日志弹窗 -->
+<div class="changelog-overlay" id="changelog-overlay" onclick="closeChangelog(event)">
+  <div class="changelog-modal" onclick="event.stopPropagation()">
+    <div class="changelog-header">
+      <div>
+        <div class="changelog-title">📋 更新日志</div>
+        <div class="changelog-sub" id="changelog-sub">HR助手 · 最近更新</div>
+      </div>
+      <button class="changelog-close" onclick="closeChangelog()">✕</button>
+    </div>
+    <div class="changelog-body" id="changelog-body"></div>
+    <div class="changelog-footer">
+      <label class="cl-never"><input type="checkbox" id="changelog-never"> 不再提示</label>
+      <button class="changelog-btn" onclick="closeChangelog()">我知道了</button>
+    </div>
   </div>
 </div>
 
@@ -2862,6 +2948,52 @@ const leaveData = {
 
 // 预构建小精灵联想索引（必须在 attendanceData / itData / leaveData 之后）
 const ASST_SUGGESTIONS = buildAsstSuggestionIndex();
+
+// ========== 更新日志 & 办理入口配置 ==========
+// 更新日志：只记录对使用者有价值的改动（已去除"上线/部署"类条目）
+const SITE_VERSION = '2026.07.15';
+const CHANGELOG = [
+  { date: '2026-06-17', tag: '新功能', title: '请假指南模块上线', desc: '接入《员工休假管理细则》29条知识，覆盖年假/病假/事假/婚假/生育类/丧假等' },
+  { date: '2026-06-17', tag: '新功能', title: 'IT办公指引模块上线', desc: '电脑配置、打印机、WiFi网络、IT报修等办公指引' },
+  { date: '2026-06-18', tag: '新功能', title: '小助手 v2 智能升级', desc: '智能语义理解 + 多轮问答向导（迟到/缺卡/丧假/年假等场景）' },
+  { date: '2026-06-24', tag: '新功能', title: 'WiFi密码一键复制', desc: '办公WiFi密码点击按钮即复制，不再明文展示' },
+  { date: '2026-06-30', tag: '优化',   title: '缺卡流程修正', desc: '忘记打上班卡改为先报备HR再补卡，流程更清晰' },
+  { date: '2026-07-10', tag: '新功能', title: '小助手智能联想', desc: '输入关键词即推荐考勤宝典/休假细则相关问题，点击直接看答案' },
+  { date: '2026-07-10', tag: '优化',   title: '答案可查看原文', desc: '每条答案底部新增入口，一键跳转到对应模块详情页' },
+  { date: '2026-07-10', tag: '新功能', title: '更新日志弹窗', desc: '进入页面自动提示近期更新，首页常驻入口可随时回看' },
+  { date: '2026-07-10', tag: '新功能', title: '请假办理入口', desc: '搜索请假相关问题，答案底部直达悦工作请假申请系统' },
+  { date: '2026-07-15', tag: '新功能', title: '更新日志 + 智能办理入口正式上线', desc: '更新日志弹窗系统上线，首页常置入口可随时回看历史迭代；搜索请假直达悦工作申请系统' },
+];
+
+// 办理入口：按模块配置，答案底部自动拼"去申请"按钮（一处配置全局生效）
+const ACTION_LINKS = {
+  leave: { label: '去悦工作提交请假申请', url: 'http://hrma.yuexiuproperty.cn/m/#/self/leave/index' },
+};
+
+// 关键词 → 模块 映射，用于自动判断当前问题属于哪个模块（从而决定是否展示办理入口）
+const ACTION_MODULE_DETECT = {
+  leave:      ['请假', '年假', '病假', '事假', '婚假', '产假', '丧假', '生育', '休假', '调休', '带薪', '请假条'],
+  attendance: ['打卡', '迟到', '补卡', '缺卡', '忘打', '忘记打', '忘记打卡', '外勤', '考勤', '漏打'],
+  it_guide:   ['电脑', 'wifi', '网络', '打印机', '报修', 'it办公', '连不上'],
+  certificate:['证明', '在职证明', '收入证明', '开证明'],
+  resign:     ['离职', '辞职', '提离职'],
+};
+
+// 从用户问题中识别所属模块（命中第一个命中的模块即返回）
+function detectModuleFromQuery(q) {
+  const t = (q || '').toLowerCase();
+  for (const mod in ACTION_MODULE_DETECT) {
+    if (ACTION_MODULE_DETECT[mod].some(k => t.includes(k))) return mod;
+  }
+  return '';
+}
+
+// 生成"办理入口"按钮的 HTML（命中 ACTION_LINKS 才有内容）
+function getActionBtnHtml(module) {
+  const act = (typeof ACTION_LINKS !== 'undefined' && module && ACTION_LINKS[module]) ? ACTION_LINKS[module] : null;
+  if (!act) return '';
+  return `<div style="margin-top:10px;"><a href="${escapeAttr(act.url)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:#534AB7;color:#fff;font-size:13px;padding:8px 16px;border-radius:20px;text-decoration:none;font-weight:600;">🚀 ${escapeHtml(act.label)} &rarr;</a></div>`;
+}
 
 // 休假文档全文（详细视图用）
 const leaveDocRaw = [
@@ -4339,6 +4471,83 @@ function closeAnswerModal(event) {
   document.body.style.overflow = '';
 }
 
+// ===== 更新日志弹窗 =====
+const CL_STORE_KEY = 'hr_cl_read_version';   // 已读版本
+const CL_NEVER_KEY = 'hr_cl_never_show';     // 不再提示
+const CL_TAG_CLASS = { '新功能': 'cl-tag-new', '优化': 'cl-tag-opt', '修复': 'cl-tag-fix' };
+
+function renderChangelog() {
+  const body = document.getElementById('changelog-body');
+  if (!body) return;
+  // 按日期倒序、同日期合并
+  const byDate = {};
+  for (const item of CHANGELOG) {
+    (byDate[item.date] = byDate[item.date] || []).push(item);
+  }
+  const dates = Object.keys(byDate).sort().reverse();
+  let html = '';
+  for (const d of dates) {
+    let itemsHtml = '';
+    for (const it of byDate[d]) {
+      const tagCls = CL_TAG_CLASS[it.tag] || 'cl-tag-new';
+      itemsHtml += `<div class="cl-item">
+        <span class="cl-tag ${tagCls}">${escapeHtml(it.tag)}</span>
+        <div class="cl-item-title">${escapeHtml(it.title)}</div>
+        <div class="cl-item-desc">${escapeHtml(it.desc)}</div>
+      </div>`;
+    }
+    html += `<div class="cl-day">
+      <span class="cl-day-dot"></span>
+      <div class="cl-day-date">${escapeHtml(d)}</div>
+      <div class="cl-day-items">${itemsHtml}</div>
+    </div>`;
+  }
+  body.innerHTML = html;
+  const sub = document.getElementById('changelog-sub');
+  if (sub) sub.textContent = `HR助手 · 共 ${CHANGELOG.length} 项更新`;
+}
+
+function showChangelog() {
+  renderChangelog();
+  const overlay = document.getElementById('changelog-overlay');
+  const never = document.getElementById('changelog-never');
+  if (never) never.checked = (localStorage.getItem(CL_NEVER_KEY) === '1');
+  overlay.classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeChangelog(event) {
+  if (event && event.target && event.target.id !== 'changelog-overlay') return;
+  const overlay = document.getElementById('changelog-overlay');
+  overlay.classList.remove('show');
+  document.body.style.overflow = '';
+  // 记录已读当前版本
+  localStorage.setItem(CL_STORE_KEY, SITE_VERSION);
+  // 不再提示
+  const never = document.getElementById('changelog-never');
+  if (never && never.checked) localStorage.setItem(CL_NEVER_KEY, '1');
+}
+
+// 首页加载时：有新版（或从未看过）且未勾选"不再提示"才自动弹出
+function maybeAutoChangelog() {
+  const never = localStorage.getItem(CL_NEVER_KEY) === '1';
+  if (never) return;
+  const read = localStorage.getItem(CL_STORE_KEY);
+  if (!read || read !== SITE_VERSION) {
+    showChangelog();
+  }
+}
+
+// ESC关闭更新日志弹窗
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    const overlay = document.getElementById('changelog-overlay');
+    if (overlay && overlay.classList.contains('show')) {
+      closeChangelog();
+    }
+  }
+});
+
 // ESC关闭答案弹窗
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
@@ -5710,6 +5919,9 @@ function asstSendDirectAnswer(keyword, detail, category, module) {
       const navLabel = navLabels[module] || '详情';
       answerHtml += `<div style="margin-top:12px;padding-top:8px;border-top:1px dashed #e5e7eb;font-size:12px;color:#6b7280;">📍 来源：${escapeHtml(navLabel)} · ${escapeHtml(category)}</div>`;
       answerHtml += `<div style="margin-top:6px;"><a href="javascript:void(0)" onclick="switchToDetail('${module}');initDetailSearch('${module}');document.getElementById('asst-chat').scrollTop=0;" style="color:#534AB7;font-size:12px;text-decoration:underline;">📖 查看原文 &rarr;</a></div>`;
+      // 办理入口按钮（按模块配置，一处配置全局生效）
+      const actBtn = getActionBtnHtml(module);
+      if (actBtn) answerHtml += actBtn;
     }
 
     const botMsg = `<div class="assistant-msg bot">
@@ -5773,10 +5985,14 @@ function assistantSend() {
 
   setTimeout(() => {
     document.getElementById('asst-thinking')?.remove();
-    const answer = assistantGetAnswer(q).replace(/\n/g, '<br>');
+    let answerHtml = String(assistantGetAnswer(q)).replace(/\n/g, '<br>');
+    // 命中"办理入口"模块时，在答案底部追加紫色行动按钮
+    const actMod = detectModuleFromQuery(q);
+    const actBtn = getActionBtnHtml(actMod);
+    if (actBtn) answerHtml += actBtn;
     const botMsg = `<div class="assistant-msg bot">
       <div class="msg-avatar">${ASST_SPRITE}</div>
-      <div class="msg-content">${answer}</div>
+      <div class="msg-content">${answerHtml}</div>
     </div>`;
     chat.insertAdjacentHTML('beforeend', botMsg);
     chat.scrollTop = chat.scrollHeight;
@@ -5796,6 +6012,10 @@ function escapeHtml(s) {
   d.textContent = s;
   return d.innerHTML;
 }
+
+// 首页加载：有新版时自动弹出更新日志（受"不再提示"控制）
+// 弹窗 DOM 已置于 <script> 之前，脚本执行时即可访问
+maybeAutoChangelog();
 </script>
 
 <!-- Q&A 答案弹窗 -->
