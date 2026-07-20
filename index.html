@@ -826,7 +826,7 @@
 .assistant-msg.bot { justify-content: flex-start; }
 .assistant-msg.user { justify-content: flex-end; }
 .assistant-msg .msg-avatar {
-  width: 28px; height: 28px;
+  width: 42px; height: 42px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -834,7 +834,7 @@
   font-size: 14px;
   flex-shrink: 0;
 }
-.assistant-msg.bot .msg-avatar { background: linear-gradient(135deg, #e0e7ff, #c7d2fe); }
+.assistant-msg.bot .msg-avatar { background: transparent; overflow: hidden; }
 .assistant-msg.user .msg-avatar { background: #e0e7ff; }
 .assistant-msg .msg-content {
   max-width: 75%;
@@ -4717,7 +4717,7 @@ const ASST_SYSTEM_PROMPT = `你是「HR助手」平台的智能客服，服务�
 4. 涉及薪资绩效等敏感问题建议联系HR部门`;
 
 // 小精灵图标 SVG（聊天中用）
-const ASST_SPRITE = '<svg viewBox="0 0 24 24"><defs><linearGradient id="spS" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#a5b4fc"/><stop offset="100%" stop-color="#6366f1"/></linearGradient></defs><ellipse cx="12" cy="13" rx="7" ry="8" fill="url(#spS)"/><circle cx="10" cy="12" r="1.8" fill="#fff" opacity="0.9"/><circle cx="14" cy="12" r="1.8" fill="#fff" opacity="0.9"/><circle cx="10.3" cy="12.3" r="0.8" fill="#3730a3"/><circle cx="14.3" cy="12.3" r="0.8" fill="#3730a3"/><path d="M10 16 Q12 18.5 14 16" stroke="#3730a3" stroke-width="1.2" fill="none" stroke-linecap="round"/><path d="M5 10 C2 6 4 2 8 0" stroke="url(#spS)" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.7"/><path d="M19 10 C22 6 20 2 16 0" stroke="url(#spS)" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.7"/></svg>';
+const ASST_SPRITE = '<img src="attachments/asst-avatar-new.png" alt="HR小助手" style="width:100%;height:100%;object-fit:contain;border-radius:50%;">';
 
 // 意图定义：同义词 + 语境词 + 答案 + 关联模块
 const INTENT_DEFS = [
