@@ -1354,6 +1354,42 @@
 .att-cat-card.cat-approval:hover { border-color: #534AB7; background: #faf9ff; }
 .att-cat-card.cat-approval .att-cat-label { color: #534AB7; }
 
+/* 商业保险：分类卡片配色 */
+.att-cat-card.cat-enroll::before { background: #534AB7; }
+.att-cat-card.cat-enroll:hover { border-color: #534AB7; background: #faf9ff; }
+.att-cat-card.cat-enroll .att-cat-label { color: #534AB7; }
+
+.att-cat-card.cat-about::before { background: #16A085; }
+.att-cat-card.cat-about:hover { border-color: #16A085; background: #f6fdfb; }
+.att-cat-card.cat-about .att-cat-label { color: #16A085; }
+
+.att-cat-card.cat-download::before { background: #2980B9; }
+.att-cat-card.cat-download:hover { border-color: #2980B9; background: #f7fbfe; }
+.att-cat-card.cat-download .att-cat-label { color: #2980B9; }
+
+.att-cat-card.cat-claim::before { background: #F39C12; }
+.att-cat-card.cat-claim:hover { border-color: #F39C12; background: #fffdf8; }
+.att-cat-card.cat-claim .att-cat-label { color: #F39C12; }
+
+.att-cat-card.cat-material::before { background: #E91E63; }
+.att-cat-card.cat-material:hover { border-color: #E91E63; background: #fef6f9; }
+.att-cat-card.cat-material .att-cat-label { color: #E91E63; }
+
+/* 商业保险：顶部参保说明横幅 */
+.ins-enroll-banner { background: linear-gradient(135deg, #f4f2ff, #faf9ff); border: 1px solid #e8e5f5; border-radius: 16px; padding: 22px 24px; margin-bottom: 22px; }
+.ins-banner-title { font-size: 17px; font-weight: 800; color: #534AB7; margin-bottom: 14px; }
+.ins-banner-points { display: flex; flex-direction: column; gap: 12px; }
+.ins-banner-point { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; color: #444; line-height: 1.7; }
+.ins-point-tag { flex: 0 0 auto; background: #534AB7; color: #fff; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
+.ins-point-text { flex: 1; }
+.ins-point-text b { color: #534AB7; }
+.ins-banner-footer { margin-top: 14px; padding-top: 12px; border-top: 1px dashed #ddd6f5; font-size: 13px; color: #666; }
+.ins-banner-footer b { color: #534AB7; }
+
+/* 全局兜底：高亮/警示标签（保险卡片详情内使用） */
+.att-warn { background: #ffebee; padding: 1px 5px; border-radius: 3px; font-weight: 600; color: #c62828; }
+.att-hl { background: #fff3cd; padding: 1px 5px; border-radius: 3px; font-weight: 600; color: #856404; }
+
 .att-cat-back { display: inline-flex; align-items: center; gap: 6px; padding: 0 24px 16px; color: #999; cursor: pointer; font-size: 13px; transition: color 0.2s; }
 .att-cat-back:hover { color: #534AB7; }
 
@@ -1827,11 +1863,10 @@
         <div class="module-name">我要转正</div>
         <div class="module-desc">试用期指南</div>
       </div>
-      <div class="module-card card-pink" data-module="certificate" onclick="navigateTo('certificate')">
-        <div class="module-icon icon-pink">📄</div>
-        <div class="module-name">我要开证明</div>
-        <div class="module-desc">即将上线</div>
-        <div class="module-badge badge-gray">敬请期待</div>
+      <div class="module-card card-pink" data-module="insurance" onclick="navigateTo('insurance')">
+        <div class="module-icon icon-pink">🛡️</div>
+        <div class="module-name">商业保险</div>
+        <div class="module-desc">补充医疗保障</div>
       </div>
       <div class="module-card card-coral" data-module="resign" onclick="navigateTo('resign')">
         <div class="module-icon icon-coral">🚪</div>
@@ -1894,6 +1929,7 @@
   <div class="tab-content" id="tab-attendance"></div>
   <div class="tab-content" id="tab-leave"></div>
   <div class="tab-content" id="tab-it_guide"></div>
+  <div class="tab-content" id="tab-insurance"></div>
 
 </div>
 
@@ -2780,6 +2816,169 @@ const itDocRaw = [
   { type: "text", content: "网络故障排查：① 网线是否松动 ② WiFi 是否误连其他网络 ③ 重启电脑和路由器 ④ 仍无法解决则 IT 报修。", bold: false, heading: false }
 ];
 
+// ========== 板块八：商业保险（员工补充医疗保障指引）==========
+const insuranceData = {
+  title: '商业保险 · 员工补充医疗保障',
+  intro: '公司统一为全体员工购买补充医疗保险，依托「平安企业宝」APP 自助理赔，就医后拍照上传即可，最快当天到账。',
+  // 顶部横幅：参保办理说明（两点式）
+  enrollBanner: {
+    title: '📝 补充医疗保险 · 参保办理说明',
+    points: [
+      {
+        tag: '① 员工本人参保',
+        text: '公司统一为全体员工投保。如您本人需参保，请将<b>本人身份证号</b>提供给 HR 登记即可。'
+      },
+      {
+        tag: '② 为家属参保',
+        text: '每位员工可为 <b>1 位</b> 直系亲属（父亲 / 母亲 / 子女）投保。需向 HR 提供家属的 <b>姓名、与本人关系、身份证号</b>；若子女 <b>未满 2 周岁</b>，还需提供 <b>出生医学证明</b>。'
+      }
+    ],
+    footer: '🗓️ 办理时间：每月 <b>月底</b> 统一办理投保，请提前将资料交给 HR。'
+  },
+  categories: [
+    {
+      key: 'enroll',
+      label: '参保办理',
+      icon: '📝',
+      items: [
+        {
+          keyword: '员工本人参保',
+          detail: '公司统一为全体员工购买补充医疗保险。如您本人需要参保，只需将<b>本人身份证号</b>提供给 HR 登记即可，无需其他材料。'
+        },
+        {
+          keyword: '为家属参保（父母 / 子女）',
+          detail: '每位员工可为 <b>1 位</b> 直系亲属（父亲 / 母亲 / 子女）投保：<br>· 需向 HR 提供家属 <b>姓名、与本人关系、身份证号</b><br>· 子女 <b>未满 2 周岁</b> 的，还需提供 <b>出生医学证明</b><br>· 每月 <b>月底</b> 统一办理投保，请提前将资料交 HR'
+        }
+      ]
+    },
+    {
+      key: 'about',
+      label: '关于保障',
+      icon: '🛡️',
+      items: [
+        {
+          keyword: '什么是补充医疗保险',
+          detail: '补充医疗保险是公司在<b>社保基本医疗保险</b>之外，为全体员工额外购买的医疗保障。就医产生的合规医疗费用，在社保报销后剩余部分可再按约定进行补充报销，进一步减轻员工医疗负担。'
+        },
+        {
+          keyword: '保障范围与亮点',
+          detail: '覆盖 <b>医疗、意外、购药、重疾</b> 四大类保障。依托「平安企业宝」APP 自助理赔：<br>· 手机拍照上传发票 / 病历，<b>AI 智能审核</b><br>· 赔款 <b>最快当天、平均 1-2 天</b> 到账<br>· <b>500 元以下</b> 案件免寄发票原件，全程线上办理'
+        }
+      ]
+    },
+    {
+      key: 'download',
+      label: '下载 APP',
+      icon: '📱',
+      items: [
+        {
+          keyword: '扫码下载平安企业宝',
+          detail: '使用手机扫描下方二维码下载「平安企业宝」APP，首次登录请使用<b>公司统一企业码</b>完成注册 / 绑定。',
+          image: 'insurance_img/ins_qrcode.png',
+          imageCaption: '平安企业宝 下载二维码'
+        },
+        {
+          keyword: 'APP 首页功能一览',
+          detail: '登录后首页可办理：<b>查保单、办理赔、查健康、领权益、保单日历、体检预约、月牙积分、好券</b>，以及「精选 / 视频 / 保险 / 商品」等板块。理赔相关操作请进入「办理赔」。',
+          image: 'insurance_img/ins_app_home.jpg',
+          imageCaption: '平安企业宝 首页功能示意'
+        },
+        {
+          keyword: '如何进入办理赔',
+          detail: '打开 APP 后，点击首页的 <b>「办理赔」</b> 按钮，即可发起理赔申请，按提示拍照上传材料并提交。'
+        }
+      ]
+    },
+    {
+      key: 'claim',
+      label: '理赔操作',
+      icon: '⚡',
+      items: [
+        {
+          keyword: '自助理赔三步走',
+          detail: '<b>① 拍照上传</b>：用手机拍摄发票、病历等材料并上传<br><b>② 系统自核</b>：AI 智能审核案件信息<br><b>③ 赔款到账</b>：审核通过后赔款打入账户，<b>平均 1-2 天到账</b>'
+        },
+        {
+          keyword: '线上理赔规则',
+          detail: '· <b>500 元以下</b> 全案金额：免收发票原件，纯线上办理<br>· <b>超过 500 元或涉及住院</b>：需提交发票 / 结算单原件<br>· 正常免收材料，但有 <b>约 10% 概率抽检</b>（APP 会提示）<br>· 抽检资料请在 <b>赔款到账后再自行处理发票</b><br>· <span class="att-warn">身故、残疾、重大疾病等大险必须线下办理</span>'
+        },
+        {
+          keyword: '理赔小贴士',
+          detail: '· 可设置<b>单笔小额免实收单据</b><br>· <b>电子票据</b>可直接上传 PDF 文件<br>· 全部为电子发票的案件<b>免收发票原件</b><br>· 数据由平安自有 APP 承载，安全有保障'
+        }
+      ]
+    },
+    {
+      key: 'material',
+      label: '理赔材料',
+      icon: '📋',
+      items: [
+        {
+          keyword: '医疗 · 门诊',
+          detail: '① 门（急）诊病历（需主动向医生要求打印）<br>② 医疗费用原始凭证（带公章发票原件或电子票据 PDF）<br>③ 医疗费用明细清单（可选，含项目名称及金额）<br>④ 被保险人身份证明（可选，正反面）',
+          image: 'insurance_img/ins_medical_outpatient.jpg',
+          imageCaption: '医疗-门诊 材料清单'
+        },
+        {
+          keyword: '医疗 · 住院',
+          detail: '① 被保险人身份证明（正反面）<br>② 住院病历 / 出院小结（含入院情况、治疗经过、既往史、出入院诊断）<br>③ 医疗费用原始凭证<br>④ 医疗费用明细清单 / 处方<br>⑤ 社保结算单原件（如使用医保）<br>⑥ 其他（视情况）',
+          image: 'insurance_img/ins_medical_inpatient.jpg',
+          imageCaption: '医疗-住院 材料清单'
+        },
+        {
+          keyword: '意外 · 门诊',
+          detail: '① 被保险人身份证明<br>② 门（急）诊病历<br>③ 医疗费用原始凭证<br>④ 事故证明（可选，由公安 / 交管部门开具）',
+          image: 'insurance_img/ins_accident_outpatient.jpg',
+          imageCaption: '意外-门诊 材料清单'
+        },
+        {
+          keyword: '重大疾病',
+          detail: '① 被保险人身份证明<br>② 病理 / 血液 / 影像检查报告（附疾病诊断证明书）<br>③ 门（急）诊病历（可选）<br>④ 住院病历 / 出院小结（可选）',
+          image: 'insurance_img/ins_critical.jpg',
+          imageCaption: '重疾 材料清单'
+        },
+        {
+          keyword: '购药',
+          detail: '① 医疗费用原始凭证（由药房出具，带公章发票或电子票据 PDF）',
+          image: 'insurance_img/ins_medicine.jpg',
+          imageCaption: '购药 材料清单'
+        }
+      ]
+    }
+  ]
+};
+
+// 商业保险 原始文档全文（经典视图用）
+const insuranceDocRaw = [
+  { type: "heading", content: "悦汇城 2026 年员工补充医疗保障指引" },
+  { type: "text", content: "公司统一为全体员工购买补充医疗保险，依托「平安企业宝」APP 自助理赔，就医后拍照上传即可，最快当天到账。", bold: false, heading: false },
+  { type: "text", content: "一、参保办理说明", bold: false, heading: true },
+  { type: "text", content: "① 员工本人参保：请将本人身份证号提供给 HR 登记即可。", bold: false, heading: false },
+  { type: "text", content: "② 为家属参保：每位员工可为 1 位直系亲属（父亲 / 母亲 / 子女）投保，需向 HR 提供家属姓名、与本人关系、身份证号；子女未满 2 周岁的，还需提供出生医学证明。每月月底统一办理投保。", bold: false, heading: false },
+  { type: "text", content: "二、关于保障", bold: false, heading: true },
+  { type: "text", content: "补充医疗保险是公司在社保基本医疗保险之外为员工额外购买的医疗保障，覆盖医疗、意外、购药、重疾四大类，依托平安企业宝 APP 自助理赔，赔款最快当天、平均 1-2 天到账，500 元以下案件免寄发票原件。", bold: false, heading: false },
+  { type: "text", content: "三、下载 APP", bold: false, heading: true },
+  { type: "text", content: "使用手机扫描二维码下载「平安企业宝」APP，首次登录请使用公司统一企业码完成注册 / 绑定。", bold: false, heading: false },
+  { type: "image", src: "insurance_img/ins_qrcode.png", caption: "平安企业宝 下载二维码" },
+  { type: "text", content: "APP 首页可办理：查保单、办理赔、查健康、领权益、保单日历、体检预约、月牙积分、好券，以及精选 / 视频 / 保险 / 商品等板块。", bold: false, heading: false },
+  { type: "image", src: "insurance_img/ins_app_home.jpg", caption: "平安企业宝 首页功能示意" },
+  { type: "text", content: "四、理赔操作", bold: false, heading: true },
+  { type: "text", content: "自助理赔三步走：① 拍照上传（手机拍摄发票 / 病历上传）→ ② 系统自核（AI 智能审核）→ ③ 赔款到账（平均 1-2 天到账）。", bold: false, heading: false },
+  { type: "text", content: "线上理赔规则：500 元以下全案金额免收发票原件、纯线上办理；超过 500 元或涉及住院需提交发票 / 结算单原件；正常免收材料但有约 10% 概率抽检（APP 会提示）；抽检资料请在赔款到账后再自行处理发票；身故、残疾、重大疾病等大险必须线下办理。", bold: false, heading: false },
+  { type: "text", content: "理赔小贴士：可设置单笔小额免实收单据；电子票据可直接上传 PDF 文件；全部为电子发票的案件免收发票原件；数据由平安自有 APP 承载，安全有保障。", bold: false, heading: false },
+  { type: "text", content: "五、理赔材料", bold: false, heading: true },
+  { type: "text", content: "医疗 · 门诊：① 门（急）诊病历（需主动向医生要求打印）② 医疗费用原始凭证（带公章发票原件或电子票据 PDF）③ 医疗费用明细清单（可选）④ 被保险人身份证明（可选）。", bold: false, heading: false },
+  { type: "image", src: "insurance_img/ins_medical_outpatient.jpg", caption: "医疗-门诊 材料清单" },
+  { type: "text", content: "医疗 · 住院：① 被保险人身份证明（正反面）② 住院病历 / 出院小结 ③ 医疗费用原始凭证 ④ 医疗费用明细清单 / 处方 ⑤ 社保结算单原件（如使用医保）⑥ 其他（视情况）。", bold: false, heading: false },
+  { type: "image", src: "insurance_img/ins_medical_inpatient.jpg", caption: "医疗-住院 材料清单" },
+  { type: "text", content: "意外 · 门诊：① 被保险人身份证明 ② 门（急）诊病历 ③ 医疗费用原始凭证 ④ 事故证明（可选）。", bold: false, heading: false },
+  { type: "image", src: "insurance_img/ins_accident_outpatient.jpg", caption: "意外-门诊 材料清单" },
+  { type: "text", content: "重大疾病：① 被保险人身份证明 ② 病理 / 血液 / 影像检查报告（附疾病诊断证明书）③ 门（急）诊病历（可选）④ 住院病历 / 出院小结（可选）。", bold: false, heading: false },
+  { type: "image", src: "insurance_img/ins_critical.jpg", caption: "重疾 材料清单" },
+  { type: "text", content: "购药：① 医疗费用原始凭证（由药房出具，带公章发票或电子票据 PDF）。", bold: false, heading: false },
+  { type: "image", src: "insurance_img/ins_medicine.jpg", caption: "购药 材料清单" }
+];
+
 // ========== 板块五：请假指南（请假管理细则）==========
 const leaveData = {
   title: '休假管理指南',
@@ -2963,7 +3162,7 @@ const ACTION_MODULE_DETECT = {
   leave:      ['请假', '年假', '病假', '事假', '婚假', '产假', '丧假', '生育', '休假', '调休', '带薪', '请假条'],
   attendance: ['打卡', '迟到', '补卡', '缺卡', '忘打', '忘记打', '忘记打卡', '外勤', '考勤', '漏打'],
   it_guide:   ['电脑', 'wifi', '网络', '打印机', '报修', 'it办公', '连不上'],
-  certificate:['证明', '在职证明', '收入证明', '开证明'],
+  insurance:['保险', '商业保险', '补充医疗', '医保', '理赔', '报销', '企业宝', '平安', '参保', '投保'],
   resign:     ['离职', '辞职', '提离职'],
 };
 
@@ -3127,7 +3326,8 @@ function switchViewMode(mode) {
                        currentDetailModule === 'resign' ? 'resign' :
                        currentDetailModule === 'attendance' ? 'attendance' :
                        currentDetailModule === 'leave' ? 'leave' :
-                       currentDetailModule === 'it_guide' ? 'it_guide' : 'resign';
+                       currentDetailModule === 'it_guide' ? 'it_guide' :
+                       currentDetailModule === 'insurance' ? 'insurance' : 'resign';
     const target = document.getElementById('tab-' + tabKey);
     if (mode === 'classic') {
       tabMap[tabKey].render(target);
@@ -3145,7 +3345,8 @@ function renderModuleCards(moduleKey, container) {
   else if (moduleKey === 'resign') renderResignCards(container);
   else if (moduleKey === 'attendance') renderAttendanceCards(container);
   else if (moduleKey === 'leave') renderLeaveCards(container);
-  else if (moduleKey === 'it_guide') renderItCards(container);
+  else   if (moduleKey === 'it_guide') renderItCards(container);
+  else if (moduleKey === 'insurance') renderInsuranceCards(container);
 }
 
 function toggleCard(headerEl) {
@@ -3354,6 +3555,10 @@ let attendanceShowCategories = true;
 
 let leaveCurrentCat = 'annual';
 let leaveShowCategories = true;
+
+// 商业保险模块状态
+let insuranceShowCategories = true;
+let insuranceCurrentCat = 'enroll';
 
 // 考勤第一屏 → 点击分类大卡片进入详情
 function enterAttendanceCat(catKey) {
@@ -3652,6 +3857,142 @@ function renderLeaveCards(container) {
   container.querySelectorAll('.timeline-card-header').forEach(h => {
     h.addEventListener('click', function() { toggleCard(this); });
   });
+}
+
+
+// ============================================================
+//  🛡️ 商业保险渲染（三级架构：顶部横幅 + 分类网格 → 卡片时间线）
+// ============================================================
+
+// 顶部「参保办理说明」横幅（两点式）
+function renderInsuranceBanner() {
+  const b = insuranceData.enrollBanner;
+  if (!b) return '';
+  let html = '<div class="ins-enroll-banner">';
+  html += '<div class="ins-banner-title">' + esc(b.title) + '</div>';
+  html += '<div class="ins-banner-points">';
+  for (const p of b.points) {
+    html += '<div class="ins-banner-point">'
+      + '<span class="ins-point-tag">' + esc(p.tag) + '</span>'
+      + '<span class="ins-point-text">' + p.text + '</span>'
+      + '</div>';
+  }
+  html += '</div>';
+  html += '<div class="ins-banner-footer">' + b.footer + '</div>';
+  html += '</div>';
+  return html;
+}
+
+function renderInsuranceCards(container) {
+  let html = renderInsuranceBanner();
+  if (insuranceShowCategories) {
+    html += renderInsuranceCategoryGridInner();
+  } else {
+    const cat = insuranceData.categories.find(c => c.key === insuranceCurrentCat);
+    if (!cat) { container.innerHTML = html; return; }
+    html += '<div class="att-cat-back" onclick="backToInsuranceCategories()">← 返回分类</div>';
+    html += '<div class="timeline-wrap">';
+    for (let i = 0; i < cat.items.length; i++) {
+      const item = cat.items[i];
+      const clr = CARD_COLORS[i % CARD_COLORS.length];
+      html += '<div class="timeline-card tl-' + clr + '">'
+        + '<div class="timeline-dot"></div>'
+        + '<div class="timeline-card-header">'
+        + '<span class="timeline-num">' + (i + 1) + '</span>'
+        + '<div class="timeline-title-wrap">'
+        + '<div class="timeline-title">' + esc(item.keyword) + '</div>'
+        + '</div>'
+        + '<span class="timeline-arrow">▾</span>'
+        + '</div>'
+        + '<div class="timeline-card-body"><div class="timeline-card-inner">'
+        + item.detail;
+      if (item.image) {
+        html += '<div style="margin-top:12px;text-align:center;">'
+          + '<img src="' + item.image + '" alt="' + (item.imageCaption || '') + '" style="max-width:100%;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,0.1);">'
+          + (item.imageCaption ? '<div style="font-size:12px;color:#888;margin-top:6px;">' + esc(item.imageCaption) + '</div>' : '')
+          + '</div>';
+      }
+      html += '</div></div></div>';
+    }
+    html += '</div>';
+  }
+  container.innerHTML = html;
+
+  container.querySelectorAll('.timeline-card-header').forEach(h => {
+    h.addEventListener('click', function() { toggleCard(this); });
+  });
+}
+
+function renderInsuranceCategoryGridInner() {
+  let html = '<div class="att-cat-grid">';
+  for (const cat of insuranceData.categories) {
+    html += '<div class="att-cat-card cat-' + cat.key + '" onclick="enterInsuranceCat(\'' + cat.key + '\')">'
+      + '<span class="att-cat-icon">' + cat.icon + '</span>'
+      + '<div class="att-cat-label">' + esc(cat.label) + '</div>'
+      + '<div class="att-cat-count">' + cat.items.length + '条知识</div>'
+      + '</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function enterInsuranceCat(catKey) {
+  insuranceShowCategories = false;
+  insuranceCurrentCat = catKey;
+  const target = document.getElementById('tab-insurance');
+  if (target) {
+    if (detailViewMode === 'classic') {
+      renderInsuranceClassic(target);
+    } else {
+      renderInsuranceCards(target);
+    }
+  }
+}
+
+function backToInsuranceCategories() {
+  insuranceShowCategories = true;
+  const target = document.getElementById('tab-insurance');
+  if (target) {
+    if (detailViewMode === 'classic') {
+      renderInsuranceClassic(target);
+    } else {
+      renderInsuranceCards(target);
+    }
+  }
+}
+
+function switchInsuranceCat(catKey) {
+  insuranceCurrentCat = catKey;
+  document.querySelectorAll('.ins-sidebar-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.cat === catKey);
+  });
+  const target = document.getElementById('tab-insurance');
+  if (target) {
+    if (detailViewMode === 'classic') {
+      renderInsuranceClassic(target);
+    } else {
+      renderInsuranceCards(target);
+    }
+  }
+}
+
+function renderInsuranceClassic(container) {
+  let html = renderInsuranceBanner();
+  html += '<div class="att-doc">';
+  for (const b of insuranceDocRaw) {
+    if (b.type === 'image') {
+      html += '<div class="att-doc-item" style="margin:12px 0;text-align:center;">'
+        + '<img src="' + b.src + '" alt="' + (b.caption || '') + '" style="max-width:100%;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,0.1);">'
+        + (b.caption ? '<div style="font-size:12px;color:#888;margin-top:6px;">' + esc(b.caption) + '</div>' : '')
+        + '</div>';
+    } else if (b.heading || b.type === 'heading') {
+      html += '<div class="att-doc-heading">' + esc(b.content) + '</div>';
+    } else {
+      html += '<div class="att-doc-item">' + esc(b.content) + '</div>';
+    }
+  }
+  html += '</div>';
+  container.innerHTML = html;
 }
 
 
@@ -4082,7 +4423,8 @@ const tabMap = {
   faq: { render: renderFaq, locked: false },
   attendance: { render: renderAttendanceClassic, locked: false },
   leave: { render: renderLeaveClassic, locked: false },
-  it_guide: { render: renderItClassic, locked: false }
+  it_guide: { render: renderItClassic, locked: false },
+  insurance: { render: renderInsuranceClassic, locked: false }
 };
 
 document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -4132,7 +4474,7 @@ function navigateTo(moduleKey) {
   }
 
   // 未完成模块：Toast 提示
-  if (moduleKey === 'certificate' || moduleKey === 'more') {
+  if (moduleKey === 'more') {
     showToast('✨ 该模块即将上线，敬请期待！');
     return;
   }
@@ -4153,12 +4495,15 @@ function switchToDetail(moduleKey) {
                  moduleKey === 'resign' ? 'resign' :
                  moduleKey === 'attendance' ? 'attendance' :
                  moduleKey === 'leave' ? 'leave' :
-                 moduleKey === 'it_guide' ? 'it_guide' : 'resign';
+                 moduleKey === 'it_guide' ? 'it_guide' :
+                 moduleKey === 'insurance' ? 'insurance' : 'resign';
 
   // 进入考勤模块时重置子模块
   if (moduleKey === 'attendance') { attendanceShowCategories = true; attendanceCurrentCat = 'check'; }
   // 进入请假模块时重置子模块
   if (moduleKey === 'leave') { leaveShowCategories = true; leaveCurrentCat = 'annual'; }
+  // 进入商业保险模块时重置子模块
+  if (moduleKey === 'insurance') { insuranceShowCategories = true; insuranceCurrentCat = 'enroll'; }
 
   // 清空所有 tab-content，只激活目标
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -4209,6 +4554,7 @@ function initDetailSearch(moduleKey) {
     attendance: '搜索考勤问题，如"迟到"、"补卡"、"加班"、"请假"...',
     leave: '搜索假期关键词，如"年假"、"病假"、"产假"、"婚假"...',
     it_guide: '搜索IT问题，如"打印机"、"WiFi"、"报修"...',
+    insurance: '搜索保险问题，如"理赔"、"报销"、"企业宝"、"参保"、"材料"...',
   };
   input.placeholder = placeholders[moduleKey] || '搜索问题或关键词...';
 
@@ -4266,6 +4612,19 @@ function initDetailSearch(moduleKey) {
           keyword: item.keyword,
           detail: item.detail,
           module: 'it_guide',
+        });
+      }
+    }
+  } else if (moduleKey === 'insurance') {
+    for (const cat of insuranceData.categories) {
+      for (const item of cat.items) {
+        searchIndex.push({
+          text: cat.label + ' ' + item.keyword + ' ' + stripHtml(item.detail),
+          cat: cat.label,
+          catKey: cat.key,
+          keyword: item.keyword,
+          detail: item.detail,
+          module: 'insurance',
         });
       }
     }
@@ -4794,11 +5153,11 @@ const INTENT_DEFS = [
     leadTo: 'IT办公指引'
   },
   {
-    intent: 'certificate',
-    synonyms: ['证明', '收入证明', '在职证明'],
-    contextWords: ['开证明', '实习证明'],
-    answer: `开具证明（功能即将上线 🚧）：\n\n📄 可开具的证明类型：\n- 收入证明\n- 在职证明\n- 实习证明\n\n目前该模块正在建设中，如有紧急需求请联系 HR 部门。`,
-    leadTo: '我要开证明'
+    intent: 'insurance',
+    synonyms: ['商业保险', '补充医疗', '医保', '保险', '理赔', '报销', '企业宝', '平安'],
+    contextWords: ['参保', '投保', '家属', '二维码', '下载', '材料', '发票', '看病', '住院', '门诊', '开证明'],
+    answer: `公司统一为全体员工购买补充医疗保险，依托「平安企业宝」APP 自助理赔 🛡️\n\n📝 参保办理：员工本人参保提供身份证号给 HR；为家属（父/母/子女）投保需提供姓名、关系、身份证号，子女未满 2 周岁加出生证，每月月底统一办理。\n\n📱 下载「平安企业宝」APP，拍照上传发票即可理赔，最快当天到账。\n\n💡 更多细节可以点击首页「商业保险」卡片查看～`,
+    leadTo: '商业保险'
   },
   {
     intent: 'salary',
@@ -5912,7 +6271,7 @@ function asstSendDirectAnswer(keyword, detail, category, module) {
 
     // 如果有关联到具体模块/分类，加上来源标注和原文跳转
     if (module && category) {
-      const navLabels = { attendance: '考勤指引', leave: '请假指南', it_guide: 'IT办公指引', account: '账号开通', promotion: '员工转正', resign: '员工离职', certificate: '我要开证明' };
+      const navLabels = { attendance: '考勤指引', leave: '请假指南', it_guide: 'IT办公指引', account: '账号开通', promotion: '员工转正', resign: '员工离职', insurance: '商业保险' };
       const navLabel = navLabels[module] || '详情';
       answerHtml += `<div style="margin-top:12px;padding-top:8px;border-top:1px dashed #e5e7eb;font-size:12px;color:#6b7280;">📍 来源：${escapeHtml(navLabel)} · ${escapeHtml(category)}</div>`;
       answerHtml += `<div style="margin-top:6px;"><a href="javascript:void(0)" onclick="switchToDetail('${module}');initDetailSearch('${module}');document.getElementById('asst-chat').scrollTop=0;" style="color:#534AB7;font-size:12px;text-decoration:underline;">📖 查看原文 &rarr;</a></div>`;
