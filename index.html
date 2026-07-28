@@ -1393,6 +1393,17 @@
 .att-cat-back { display: inline-flex; align-items: center; gap: 6px; padding: 0 24px 16px; color: #999; cursor: pointer; font-size: 13px; transition: color 0.2s; }
 .att-cat-back:hover { color: #534AB7; }
 
+/* 顶部左上角「返回分类」按钮（与「返回首页」上下区分） */
+.detail-nav-left { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; }
+.detail-cat-back {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 13px; font-weight: 700; color: #534AB7;
+  background: #EEEDFE; border: 1px solid #D6D2F7;
+  padding: 4px 12px; border-radius: 14px; cursor: pointer;
+  transition: background 0.18s, box-shadow 0.18s;
+}
+.detail-cat-back:hover { background: #E3DFFB; box-shadow: 0 2px 6px rgba(83,74,183,0.18); }
+
 /* 考勤详细视图：文档直出排版 */
 .att-doc-section { margin-bottom: 28px; }
 .att-doc-cat-title { font-size: 18px; font-weight: 800; color: #534AB7; padding: 10px 14px; background: linear-gradient(135deg, #f4f2ff, #faf9ff); border-radius: 10px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
@@ -1898,7 +1909,10 @@
     <span class="badge badge-info">内部资料</span>
   </div>
   <div class="detail-nav" id="detail-nav">
-    <span class="detail-back" onclick="goHome()">← 返回首页</span>
+    <div class="detail-nav-left">
+      <span class="detail-back" onclick="goHome()">← 返回首页</span>
+      <span class="detail-cat-back" id="detail-cat-back" onclick="backToCurrentCategory()" style="display:none;">← 返回分类</span>
+    </div>
     <div class="view-toggle" id="view-toggle">
       <span class="vt-opt" data-mode="classic" onclick="switchViewMode('classic')">📋 详细</span>
       <span class="vt-opt active" data-mode="card" onclick="switchViewMode('card')">🎨 卡片</span>
@@ -3339,6 +3353,7 @@ function switchViewMode(mode) {
     // 切换视图后重新初始化搜索（索引需要更新）
     initDetailSearch(currentDetailModule);
   }
+  updateCatBackBtn();
 }
 
 function renderModuleCards(moduleKey, container) {
@@ -3574,6 +3589,7 @@ function enterAttendanceCat(catKey) {
       renderAttendanceCards(target);
     }
   }
+  updateCatBackBtn();
 }
 
 // 从考勤详情返回分类大卡片
@@ -3587,6 +3603,7 @@ function backToAttendanceCategories() {
       renderAttendanceCards(target);
     }
   }
+  updateCatBackBtn();
 }
 
 function switchAttendanceCat(catKey) {
@@ -3600,6 +3617,7 @@ function switchAttendanceCat(catKey) {
     const target = document.getElementById('tab-attendance');
     if (target) renderAttendanceCards(target);
   }
+  updateCatBackBtn();
 }
 
 function toggleAttKeyword(headerEl) {
@@ -3668,8 +3686,7 @@ function renderAttendanceCards(container) {
   const cat = attendanceData.categories.find(c => c.key === attendanceCurrentCat);
   if (!cat) return;
 
-  let html = '<div class="att-cat-back" onclick="backToAttendanceCategories()">← 返回分类</div>';
-  html += '<div class="timeline-wrap">';
+  let html = '<div class="timeline-wrap">';
   for (let i = 0; i < cat.items.length; i++) {
     const item = cat.items[i];
     const clr = CARD_COLORS[i % CARD_COLORS.length];
@@ -3710,6 +3727,7 @@ function enterLeaveCat(catKey) {
       renderLeaveCards(target);
     }
   }
+  updateCatBackBtn();
 }
 
 function backToLeaveCategories() {
@@ -3722,6 +3740,7 @@ function backToLeaveCategories() {
       renderLeaveCards(target);
     }
   }
+  updateCatBackBtn();
 }
 
 function renderLeaveClassic(container) {
@@ -3836,8 +3855,7 @@ function renderLeaveCards(container) {
   const cat = leaveData.categories.find(c => c.key === leaveCurrentCat);
   if (!cat) return;
 
-  let html = '<div class="att-cat-back" onclick="backToLeaveCategories()">← 返回分类</div>';
-  html += '<div class="timeline-wrap">';
+  let html = '<div class="timeline-wrap">';
   for (let i = 0; i < cat.items.length; i++) {
     const item = cat.items[i];
     const clr = CARD_COLORS[i % CARD_COLORS.length];
@@ -3892,7 +3910,6 @@ function renderInsuranceCards(container) {
   } else {
     const cat = insuranceData.categories.find(c => c.key === insuranceCurrentCat);
     if (!cat) { container.innerHTML = html; return; }
-    html += '<div class="att-cat-back" onclick="backToInsuranceCategories()">← 返回分类</div>';
     html += '<div class="timeline-wrap">';
     for (let i = 0; i < cat.items.length; i++) {
       const item = cat.items[i];
@@ -3949,6 +3966,7 @@ function enterInsuranceCat(catKey) {
       renderInsuranceCards(target);
     }
   }
+  updateCatBackBtn();
 }
 
 function backToInsuranceCategories() {
@@ -3961,6 +3979,26 @@ function backToInsuranceCategories() {
       renderInsuranceCards(target);
     }
   }
+  updateCatBackBtn();
+}
+
+// 顶部「返回分类」按钮：根据当前模块 + 是否在分类详情内 切换显隐
+function backToCurrentCategory() {
+  if (currentDetailModule === 'attendance') backToAttendanceCategories();
+  else if (currentDetailModule === 'leave') backToLeaveCategories();
+  else if (currentDetailModule === 'insurance') backToInsuranceCategories();
+}
+
+function updateCatBackBtn() {
+  const btn = document.getElementById('detail-cat-back');
+  if (!btn) return;
+  let show = false;
+  if (detailViewMode === 'card' && currentDetailModule) {
+    if (currentDetailModule === 'attendance' && !attendanceShowCategories) show = true;
+    else if (currentDetailModule === 'leave' && !leaveShowCategories) show = true;
+    else if (currentDetailModule === 'insurance' && !insuranceShowCategories) show = true;
+  }
+  btn.style.display = show ? 'inline-flex' : 'none';
 }
 
 function switchInsuranceCat(catKey) {
@@ -3976,6 +4014,7 @@ function switchInsuranceCat(catKey) {
       renderInsuranceCards(target);
     }
   }
+  updateCatBackBtn();
 }
 
 function renderInsuranceClassic(container) {
@@ -4525,6 +4564,8 @@ function switchToDetail(moduleKey) {
 
   // 初始化搜索框
   initDetailSearch(moduleKey);
+
+  updateCatBackBtn();
 
   window.scrollTo(0, 0);
 }
