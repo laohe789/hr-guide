@@ -1599,10 +1599,6 @@
 .asst-rel-link { display: inline-block; color: #534AB7; font-size: 13px; text-decoration: none; padding: 4px 10px; margin: 2px 4px 2px 0; border-radius: 14px; background: #f4f2ff; border: 1px solid #e2deff; transition: all .15s; }
 .asst-rel-link:hover { background: #534AB7; color: #fff; border-color: #534AB7; }
 
-/* 反馈确认弹窗 */
-.asst-fb-modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:9999;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;pointer-events:none; }
-.asst-fb-modal-overlay.show { opacity:1;pointer-events:auto; }
-
 /* HR 运营数据看板 */
 .hr-data-modal { max-width: 560px; }
 .hr-data-actions { display: flex; gap: 10px; padding: 12px 18px 18px; border-top: 1px solid #eee; }
@@ -4785,6 +4781,26 @@ function buildRelatedSuggestionsHtml(q) {
     if (top.length >= 6) break;
   }
 
+  // 兜底：若关键词匹配太少（<2条），从各模块各取1条高频常见问题补充，保证总能看到入口
+  if (top.length < 2) {
+    const fallbackPool = [
+      { keyword: '怎么打卡', category: '入门须知', module: 'attendance' },
+      { keyword: '迟到怎么处理', category: '迟到与缺卡', module: 'attendance' },
+      { keyword: '怎么请病假', category: '请病假', module: 'leave' },
+      { keyword: '年假怎么请', category: '请年假', module: 'leave' },
+      { keyword: '怎么发IT故障单', category: 'IT报障', module: 'it_guide' },
+      { keyword: 'WiFi怎么连', category: '网络接入', module: 'it_guide' },
+    ];
+    for (const f of fallbackPool) {
+      if (top.length >= 6) break;
+      if (seen.has(f.keyword)) continue;
+      seen.add(f.keyword);
+      // 补全 detail（从 ASST_SUGGESTIONS 取，找不到则用兜底文案）
+      const found = ASST_SUGGESTIONS.find(s => s.keyword === f.keyword);
+      top.push({ ...f, detail: found ? found.detail : '点击查看详细指引。' });
+    }
+  }
+
   if (top.length === 0) return '';
   let html = '<div class="asst-related" style="margin-top:12px;padding-top:10px;border-top:1px dashed #d4d2e0;">';
   html += '<div style="font-size:12px;color:#888;margin-bottom:6px;">🔗 或许你想问：</div>';
@@ -4801,26 +4817,19 @@ function buildRelatedSuggestionsHtml(q) {
 
 // 员工主动反馈答不上的问题（弹窗确认）
 function feedbackToHr(q) {
-  // 弹出确认弹窗
-  const modal = document.createElement('div');
-  modal.className = 'modal-overlay asst-fb-modal-overlay';
-  modal.id = 'asst-fb-confirm-modal';
-  modal.innerHTML = `
-    <div class="modal-content asst-fb-confirm" style="max-width:400px;text-align:center;">
-      <div style="font-size:36px;margin-bottom:10px;">📬</div>
-      <div style="font-size:16px;font-weight:700;color:#333;margin-bottom:8px;">反馈给 HR</div>
-      <div style="font-size:13px;color:#666;margin-bottom:16px;line-height:1.6;">
-        你想咨询的问题是：<br><strong style="color:#534AB7;">${escapeHtml(q)}</strong><br><br>已收到你的反馈，HR 会尽快补充相关内容～
-      </div>
-      <div style="display:flex;gap:10px;justify-content:center;">
-        <button class="asst-fb-btn" onclick="confirmFeedbackToHr('${escapeAttr(q)}')" style="padding:8px 24px;">✅ 确认提交</button>
-        <button class="asst-fb-btn" onclick="closeFeedbackModal()" style="background:#f5f5f5;color:#888;border-color:#ddd;padding:8px 24px;">取消</button>
-      </div>
-    </div>`;
-  document.body.appendChild(modal);
-  setTimeout(() => modal.classList.add('show'), 10);
+  // 打开静态确认弹窗（复用 .answer-modal-overlay 经过验证的 display 切换模式）
+  asstFbPendingQ = q;
+  const modal = document.getElementById('asst-fb-modal');
+  if (!modal) return;
+  const qText = document.getElementById('asst-fb-q-text');
+  if (qText) {
+    qText.innerHTML = '你想咨询的问题是：<br><strong style="color:#534AB7;">' + escapeHtml(q) + '</strong><br><br>已收到你的反馈，HR 会尽快补充相关内容～';
+  }
+  modal.classList.add('show');
 }
-function confirmFeedbackToHr(q) {
+let asstFbPendingQ = '';
+function confirmFeedbackToHr() {
+  const q = asstFbPendingQ || '';
   try {
     const arr = JSON.parse(localStorage.getItem('hr_feedback') || '[]');
     arr.push({ ts: new Date().toISOString(), q: q });
@@ -4830,8 +4839,8 @@ function confirmFeedbackToHr(q) {
   } catch (e) { showToast('反馈失败：' + e.message); }
 }
 function closeFeedbackModal() {
-  const m = document.getElementById('asst-fb-confirm-modal');
-  if (m) { m.classList.remove('show'); setTimeout(() => m.remove(), 200); }
+  const m = document.getElementById('asst-fb-modal');
+  if (m) { m.classList.remove('show'); }
 }
 
 // 打开运营数据看板（需密码或已解锁）
@@ -5008,6 +5017,19 @@ initHrEntry();
     <div class="hr-data-actions">
       <button class="hr-data-btn primary" onclick="exportHrData()">⬇️ 导出 CSV</button>
       <button class="hr-data-btn" onclick="clearHrData()">🗑️ 清空数据</button>
+    </div>
+  </div>
+</div>
+
+<!-- 反馈给 HR 确认弹窗 -->
+<div class="answer-modal-overlay" id="asst-fb-modal" onclick="if(event.target===this)closeFeedbackModal()">
+  <div class="answer-modal" style="max-width:400px;text-align:center;" onclick="event.stopPropagation()">
+    <div style="font-size:36px;margin-bottom:10px;">📬</div>
+    <div style="font-size:16px;font-weight:700;color:#333;margin-bottom:8px;">反馈给 HR</div>
+    <div style="font-size:13px;color:#666;margin-bottom:16px;line-height:1.6;" id="asst-fb-q-text"></div>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button class="asst-fb-btn" onclick="confirmFeedbackToHr()" style="padding:8px 24px;">✅ 确认提交</button>
+      <button class="asst-fb-btn" onclick="closeFeedbackModal()" style="background:#f5f5f5;color:#888;border-color:#ddd;padding:8px 24px;">取消</button>
     </div>
   </div>
 </div>
