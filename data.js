@@ -1070,8 +1070,6 @@ const leaveData = {
   ]
 };
 
-const ASST_SUGGESTIONS = buildAsstSuggestionIndex();
-
 const SITE_VERSION = '2026.07.28';
 
 const CHANGELOG = [
