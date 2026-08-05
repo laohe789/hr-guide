@@ -1612,6 +1612,14 @@
 .hrd-time { color: #aaa; font-size: 12px; white-space: nowrap; }
 .hrd-empty { color: #aaa; font-size: 13px; padding: 8px 0; }
 
+/* HR 运营数据 密码验证弹窗 */
+.hr-pwd-modal { max-width: 420px; }
+.hr-pwd-tip { font-size: 13px; color: #777; margin: 0 0 14px; line-height: 1.5; }
+.hr-pwd-input { width: 100%; box-sizing: border-box; padding: 11px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; outline: none; transition: border-color .2s; }
+.hr-pwd-input:focus { border-color: #534AB7; }
+.hr-pwd-actions { display: flex; gap: 10px; margin-top: 16px; }
+.hr-pwd-actions .hr-data-btn { flex: 1; }
+
 .answer-modal {
   background: var(--card-bg);
   border-radius: 16px;
@@ -1920,7 +1928,7 @@
 
     <div class="home-footer-links">
       <div class="home-changelog-entry" onclick="showChangelog()">📋 更新日志</div>
-      <div class="home-changelog-entry" onclick="showHrData()">📊 运营数据</div>
+      <div class="home-changelog-entry" id="hr-data-entry" onclick="showHrData()" style="display:none;">🔒 运营数据</div>
     </div>
   </div>
 </div>
@@ -4695,8 +4703,43 @@ function feedbackToHr(q) {
   } catch (e) { showToast('反馈失败：' + e.message); }
 }
 
-// 打开运营数据看板
+// 打开运营数据看板（需密码或已解锁）
 function showHrData() {
+  // 已在本浏览器解锁则直接打开
+  if (localStorage.getItem('hr_data_unlocked') === '1') {
+    openHrData();
+    return;
+  }
+  // 否则弹密码验证
+  const pwdModal = document.getElementById('hr-pwd-modal');
+  if (!pwdModal) return;
+  const input = document.getElementById('hr-pwd-input');
+  if (input) input.value = '';
+  pwdModal.classList.add('show');
+  if (input) setTimeout(() => input.focus(), 50);
+}
+function verifyHrPassword() {
+  const input = document.getElementById('hr-pwd-input');
+  if (!input) return;
+  const val = input.value.trim();
+  if (!val) { showToast('请输入密码'); return; }
+  if (val === HR_DATA_PASSWORD) {
+    localStorage.setItem('hr_data_unlocked', '1');
+    const entry = document.getElementById('hr-data-entry');
+    if (entry) entry.style.display = '';
+    closeHrPwd();
+    openHrData();
+  } else {
+    showToast('密码错误，无法访问');
+    input.value = '';
+    input.focus();
+  }
+}
+function closeHrPwd() {
+  const m = document.getElementById('hr-pwd-modal');
+  if (m) m.classList.remove('show');
+}
+function openHrData() {
   const modal = document.getElementById('hr-data-modal');
   if (!modal) return;
   modal.classList.add('show');
@@ -4705,6 +4748,19 @@ function showHrData() {
 function closeHrData() {
   const modal = document.getElementById('hr-data-modal');
   if (modal) modal.classList.remove('show');
+}
+// 初始化 HR 入口可见性：普通员工默认看不到；
+// 仅当网址带 #hr 片段，或本浏览器已解锁过时，才显示入口
+function initHrEntry() {
+  const entry = document.getElementById('hr-data-entry');
+  if (!entry) return;
+  const unlocked = localStorage.getItem('hr_data_unlocked') === '1';
+  const hashOk = (location.hash || '').replace('#', '') === 'hr';
+  if (unlocked || hashOk) {
+    entry.style.display = '';
+  } else {
+    entry.style.display = 'none';
+  }
 }
 
 // 渲染看板内容
@@ -4790,6 +4846,7 @@ function clearHrData() {
 // 首页加载：有新版时自动弹出更新日志（受"不再提示"控制）
 // 弹窗 DOM 已置于 <script> 之前，脚本执行时即可访问
 maybeAutoChangelog();
+initHrEntry();
 </script>
 
 <!-- Q&A 答案弹窗 -->
@@ -4820,6 +4877,27 @@ maybeAutoChangelog();
     <div class="hr-data-actions">
       <button class="hr-data-btn primary" onclick="exportHrData()">⬇️ 导出 CSV</button>
       <button class="hr-data-btn" onclick="clearHrData()">🗑️ 清空数据</button>
+    </div>
+  </div>
+</div>
+
+<!-- HR 运营数据 密码验证 -->
+<div class="answer-modal-overlay" id="hr-pwd-modal" onclick="if(event.target===this)closeHrPwd()">
+  <div class="answer-modal hr-pwd-modal" onclick="event.stopPropagation()">
+    <div class="answer-modal-header">
+      <div>
+        <span class="answer-modal-cat">HR 专属</span>
+        <div class="answer-modal-title">🔒 运营数据访问验证</div>
+      </div>
+      <button class="answer-modal-close" onclick="closeHrPwd()">✕</button>
+    </div>
+    <div class="answer-modal-body">
+      <p class="hr-pwd-tip">该看板为 HR 内部管理视图，请输入访问密码。</p>
+      <input type="password" id="hr-pwd-input" class="hr-pwd-input" placeholder="请输入运营数据密码" onkeydown="if(event.key==='Enter')verifyHrPassword()" />
+      <div class="hr-pwd-actions">
+        <button class="hr-data-btn primary" onclick="verifyHrPassword()">确认</button>
+        <button class="hr-data-btn" onclick="closeHrPwd()">取消</button>
+      </div>
     </div>
   </div>
 </div>

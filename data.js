@@ -2,6 +2,7 @@
 // 该文件须在 index.html 主脚本之前加载
 
 const RESIGN_PASSWORD = '888888';
+const HR_DATA_PASSWORD = 'hr8888'; // 运营数据看板访问密码（与离职密码同风格，内部工具用）
 
 const accountData = {
   title: '开通悦工作（钉钉）账号指引',
