@@ -4784,12 +4784,12 @@ function buildRelatedSuggestionsHtml(q) {
   // 兜底：若关键词匹配太少（<2条），从各模块各取1条高频常见问题补充，保证总能看到入口
   if (top.length < 2) {
     const fallbackPool = [
-      { keyword: '怎么打卡', category: '入门须知', module: 'attendance' },
-      { keyword: '迟到怎么处理', category: '迟到与缺卡', module: 'attendance' },
-      { keyword: '怎么请病假', category: '请病假', module: 'leave' },
-      { keyword: '年假怎么请', category: '请年假', module: 'leave' },
-      { keyword: '怎么发IT故障单', category: 'IT报障', module: 'it_guide' },
-      { keyword: 'WiFi怎么连', category: '网络接入', module: 'it_guide' },
+      { keyword: '如何确认打卡成功', category: '入门须知', module: 'attendance' },
+      { keyword: '迟到了怎么办', category: '迟到与缺卡', module: 'attendance' },
+      { keyword: '病假申请流程', category: '请病假', module: 'leave' },
+      { keyword: '年假天数标准', category: '请年假', module: 'leave' },
+      { keyword: '怎么发IT单 / IT单写什么', category: 'IT报障', module: 'it_guide' },
+      { keyword: '办公 WiFi', category: '网络接入', module: 'it_guide' },
     ];
     for (const f of fallbackPool) {
       if (top.length >= 6) break;
