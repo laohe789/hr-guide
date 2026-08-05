@@ -1587,6 +1587,31 @@
 }
 .home-changelog-entry:hover { background: #E0DDFB; }
 
+.home-footer-links { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
+.home-footer-links .home-changelog-entry { margin: 0; }
+
+/* 助手答案底部「反馈给HR」按钮 */
+.asst-fb-btn { border: 1px solid #534AB7; background: #f4f2ff; color: #534AB7; padding: 7px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; font-weight: 600; }
+.asst-fb-btn:hover { background: #e9e5ff; }
+
+/* HR 运营数据看板 */
+.hr-data-modal { max-width: 560px; }
+.hr-data-actions { display: flex; gap: 10px; padding: 12px 18px 18px; border-top: 1px solid #eee; }
+.hr-data-btn { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ddd; background: #fff; color: #555; font-size: 14px; cursor: pointer; font-weight: 600; }
+.hr-data-btn.primary { background: #534AB7; color: #fff; border-color: #534AB7; }
+.hr-data-btn:hover { opacity: .9; }
+.hrd-stat-row { display: flex; gap: 12px; margin-bottom: 14px; }
+.hrd-stat { flex: 1; text-align: center; background: #f7f7fb; border-radius: 10px; padding: 12px 6px; }
+.hrd-stat-num { font-size: 22px; font-weight: 800; color: #534AB7; }
+.hrd-stat-label { font-size: 12px; color: #888; margin-top: 2px; }
+.hrd-section-title { font-size: 14px; font-weight: 700; color: #3a3a5c; margin: 14px 0 8px; }
+.hrd-list { max-height: 240px; overflow-y: auto; }
+.hrd-item { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 10px; border-bottom: 1px solid #f0f0f4; font-size: 13px; }
+.hrd-q { color: #333; word-break: break-all; }
+.hrd-badge { background: #534AB7; color: #fff; border-radius: 10px; padding: 2px 8px; font-size: 12px; white-space: nowrap; }
+.hrd-time { color: #aaa; font-size: 12px; white-space: nowrap; }
+.hrd-empty { color: #aaa; font-size: 13px; padding: 8px 0; }
+
 .answer-modal {
   background: var(--card-bg);
   border-radius: 16px;
@@ -1893,7 +1918,10 @@
       </div>
     </div>
 
-    <div class="home-changelog-entry" onclick="showChangelog()">📋 更新日志</div>
+    <div class="home-footer-links">
+      <div class="home-changelog-entry" onclick="showChangelog()">📋 更新日志</div>
+      <div class="home-changelog-entry" onclick="showHrData()">📊 运营数据</div>
+    </div>
   </div>
 </div>
 
@@ -6304,6 +6332,13 @@ function assistantSend() {
   setTimeout(() => {
     document.getElementById('asst-thinking')?.remove();
     let answerHtml = String(assistantGetAnswer(q)).replace(/\n/g, '<br>');
+    // 埋点：记录查询与命中情况（item 10）
+    const isHit = !answerHtml.includes('没有收录到答案');
+    logAsstQuery(q, isHit);
+    // 未命中时，答案底部提供「反馈给HR」入口（item 2）
+    if (!isHit) {
+      answerHtml += '<div style="margin-top:10px;"><button class="asst-fb-btn" onclick="feedbackToHr(' + JSON.stringify(q) + ')">📣 这个问题没帮到你？反馈给 HR</button></div>';
+    }
     // 命中"办理入口"模块时，在答案底部追加紫色行动按钮
     const actMod = detectModuleFromQuery(q);
     const actBtn = getActionBtnHtml(actMod);
@@ -6331,6 +6366,120 @@ function escapeHtml(s) {
   return d.innerHTML;
 }
 
+// ====== HR 运营数据（item 2 反馈入口 + item 10 使用埋点） ======
+
+// 记录查询与命中情况
+function logAsstQuery(q, hit) {
+  try {
+    const arr = JSON.parse(localStorage.getItem('hr_query_log') || '[]');
+    arr.push({ ts: new Date().toISOString(), q: q, hit: hit });
+    if (arr.length > 2000) arr.splice(0, arr.length - 2000);
+    localStorage.setItem('hr_query_log', JSON.stringify(arr));
+  } catch (e) {}
+}
+
+// 员工主动反馈答不上的问题
+function feedbackToHr(q) {
+  try {
+    const arr = JSON.parse(localStorage.getItem('hr_feedback') || '[]');
+    arr.push({ ts: new Date().toISOString(), q: q });
+    localStorage.setItem('hr_feedback', JSON.stringify(arr));
+    showToast('已反馈给 HR，谢谢你的反馈 🙏');
+  } catch (e) { showToast('反馈失败：' + e.message); }
+}
+
+// 打开运营数据看板
+function showHrData() {
+  const modal = document.getElementById('hr-data-modal');
+  if (!modal) return;
+  modal.classList.add('show');
+  renderHrData();
+}
+function closeHrData() {
+  const modal = document.getElementById('hr-data-modal');
+  if (modal) modal.classList.remove('show');
+}
+
+// 渲染看板内容
+function renderHrData() {
+  const log = JSON.parse(localStorage.getItem('hr_query_log') || '[]');
+  const fb = JSON.parse(localStorage.getItem('hr_feedback') || '[]');
+  const total = log.length;
+  const hits = log.filter(r => r.hit).length;
+  const rate = total ? Math.round(hits / total * 100) : 0;
+  const freq = {};
+  for (const r of log) {
+    const k = (r.q || '').trim();
+    if (k) freq[k] = (freq[k] || 0) + 1;
+  }
+  const top = Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 15);
+
+  let html = '<div class="hrd-stat-row">'
+    + '<div class="hrd-stat"><div class="hrd-stat-num">' + total + '</div><div class="hrd-stat-label">总查询</div></div>'
+    + '<div class="hrd-stat"><div class="hrd-stat-num">' + rate + '%</div><div class="hrd-stat-label">命中率</div></div>'
+    + '<div class="hrd-stat"><div class="hrd-stat-num">' + fb.length + '</div><div class="hrd-stat-label">待跟进反馈</div></div>'
+    + '</div>';
+
+  html += '<div class="hrd-section-title">🔥 高频查询 Top</div>';
+  if (top.length === 0) html += '<div class="hrd-empty">暂无查询记录</div>';
+  else {
+    html += '<div class="hrd-list">';
+    for (const [q, n] of top) {
+      html += '<div class="hrd-item"><span class="hrd-q">' + escapeHtml(q) + '</span><span class="hrd-badge">' + n + ' 次</span></div>';
+    }
+    html += '</div>';
+  }
+
+  html += '<div class="hrd-section-title">📣 员工反馈（答不上来的问题）</div>';
+  if (fb.length === 0) html += '<div class="hrd-empty">暂无反馈</div>';
+  else {
+    html += '<div class="hrd-list">';
+    for (const r of fb.slice().reverse()) {
+      html += '<div class="hrd-item"><span class="hrd-q">' + escapeHtml(r.q) + '</span><span class="hrd-time">' + (r.ts || '').slice(0, 10) + '</span></div>';
+    }
+    html += '</div>';
+  }
+
+  const body = document.getElementById('hr-data-body');
+  if (body) body.innerHTML = html;
+}
+
+// 导出 CSV（查询记录 + 反馈）
+function exportHrData() {
+  const log = JSON.parse(localStorage.getItem('hr_query_log') || '[]');
+  const fb = JSON.parse(localStorage.getItem('hr_feedback') || '[]');
+  const cell = s => {
+    s = String(s == null ? '' : s);
+    if (/[",\n]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  };
+  let csv = '﻿';
+  csv += '类型,时间,问题,是否命中\n';
+  for (const r of log) csv += cell('查询') + ',' + cell(r.ts) + ',' + cell(r.q) + ',' + cell(r.hit ? '命中' : '未命中') + '\n';
+  for (const r of fb) csv += cell('反馈') + ',' + cell(r.ts) + ',' + cell(r.q) + ',' + '\n';
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const d = new Date();
+  const ds = d.getFullYear() + ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2);
+  a.href = url;
+  a.download = 'HR助手数据-' + ds + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  showToast('已导出 CSV');
+}
+
+// 清空运营数据
+function clearHrData() {
+  if (!confirm('确定清空所有查询记录与反馈？（此操作不可恢复）')) return;
+  localStorage.removeItem('hr_query_log');
+  localStorage.removeItem('hr_feedback');
+  renderHrData();
+  showToast('已清空运营数据');
+}
+
 // 首页加载：有新版时自动弹出更新日志（受"不再提示"控制）
 // 弹窗 DOM 已置于 <script> 之前，脚本执行时即可访问
 maybeAutoChangelog();
@@ -6347,6 +6496,24 @@ maybeAutoChangelog();
       <button class="answer-modal-close" onclick="closeAnswerModal()">✕</button>
     </div>
     <div class="answer-modal-body" id="answer-modal-body"></div>
+  </div>
+</div>
+
+<!-- HR 运营数据看板 -->
+<div class="answer-modal-overlay" id="hr-data-modal" onclick="if(event.target===this)closeHrData()">
+  <div class="answer-modal hr-data-modal" onclick="event.stopPropagation()">
+    <div class="answer-modal-header">
+      <div>
+        <span class="answer-modal-cat">HR 专属</span>
+        <div class="answer-modal-title">📊 运营数据看板</div>
+      </div>
+      <button class="answer-modal-close" onclick="closeHrData()">✕</button>
+    </div>
+    <div class="answer-modal-body" id="hr-data-body"></div>
+    <div class="hr-data-actions">
+      <button class="hr-data-btn primary" onclick="exportHrData()">⬇️ 导出 CSV</button>
+      <button class="hr-data-btn" onclick="clearHrData()">🗑️ 清空数据</button>
+    </div>
   </div>
 </div>
 
