@@ -4663,7 +4663,7 @@ function assistantSend() {
     // 未命中时，答案底部提供「或许你想问」关联推荐 + 「反馈给HR」入口
     if (!isHit) {
       answerHtml += buildRelatedSuggestionsHtml(q);
-      answerHtml += '<div style="margin-top:10px;"><button class="asst-fb-btn" onclick="feedbackToHr(' + JSON.stringify(q) + ')">📣 都不是？反馈给 HR</button></div>';
+      answerHtml += '<div style="margin-top:10px;"><button class="asst-fb-btn" onclick="feedbackToHr(\'' + escapeAttr(q).replace(/'/g, "&#39;") + '\')">📣 都不是？反馈给 HR</button></div>';
     }
     // 命中"办理入口"模块时，在答案底部追加紫色行动按钮
     const actMod = detectModuleFromQuery(q);
