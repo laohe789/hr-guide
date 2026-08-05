@@ -1599,6 +1599,10 @@
 .asst-rel-link { display: inline-block; color: #534AB7; font-size: 13px; text-decoration: none; padding: 4px 10px; margin: 2px 4px 2px 0; border-radius: 14px; background: #f4f2ff; border: 1px solid #e2deff; transition: all .15s; }
 .asst-rel-link:hover { background: #534AB7; color: #fff; border-color: #534AB7; }
 
+/* 反馈确认弹窗 */
+.asst-fb-modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:9999;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;pointer-events:none; }
+.asst-fb-modal-overlay.show { opacity:1;pointer-events:auto; }
+
 /* HR 运营数据看板 */
 .hr-data-modal { max-width: 560px; }
 .hr-data-actions { display: flex; gap: 10px; padding: 12px 18px 18px; border-top: 1px solid #eee; }
@@ -4701,37 +4705,75 @@ function logAsstQuery(q, hit) {
 }
 
 // ====== 未命中关联推荐（或许你想问） ======
+// 语义变体归一化表：口语变体 → 标准形式（用于模糊匹配桥接）
+// 注意：长模式放前面优先匹配，避免短模式替换后残留字符
+const RELATED_VARIANTS = [
+  [/请不了假/g, '不能请假'], [/请不了/g, '不能请'], [/不能请假/g, '不能请假'], [/不能请/g, '不能请假'], [/无法请假/g, '不能请假'],
+  [/为什么/g, '为啥'], [/怎么才/g, '如何'], [/怎么办/g, '怎么做'],
+  [/要怎么/g, '怎么'], [/该如何/g, '怎么'], [/怎样/g, '怎么'],
+  [/多少天/g, '几天'], [/多久/g, '几天'], [/什么假/g, '请假'],
+  [/发不了/g, '不能发'], [/登不上/g, '登录不了'], [/连不上/g, '连接失败'],
+  [/打不开/g, '打不开'], [/找不到/g, '找不到'], [/没有/g, '没'],
+];
+
 function buildRelatedSuggestionsHtml(q) {
-  // 从用户问题中提取关键词（≥2字，过滤虚词）
-  const stopWords = new Set(['的','吗','呢','呀','啊','怎么','什么','哪','如何','是否','要','不','没','能','可以','需要','应该','请问','还','了','是','有','我','这','那','个','到','在','为','和','或','但','如果','因为','所以','为什么','为啥','怎样','多少','几','哪些','哪个','能不','能不能','怎么不能','为何','请不了']);
-  const rawTerms = q.replace(new RegExp([...stopWords].join('|'), 'g'), ' ').split(/\s+/).filter(t => t.length >= 2);
-  // 生成滑窗关键词
+  // 步骤1：对用户问题做语义归一化（用于匹配）
+  let qNormalized = q;
+  for (const [variant, standard] of RELATED_VARIANTS) {
+    qNormalized = qNormalized.replace(variant, standard);
+  }
+
+  // 步骤2：提取关键词（保留核心语义词，不过度过滤）
+  const coreStopWords = new Set(['的','吗','呢','呀','啊','是','有','我','这','那','个','到','在','和','或','但']);
+  const rawTerms = qNormalized.replace(new RegExp([...coreStopWords].join('|'), 'g'), ' ')
+    .split(/\s+/).filter(t => t.length >= 2);
+
+  // 滑窗切词
   const keyTerms = [];
   for (const t of rawTerms) {
     if (t.length <= 3) { keyTerms.push(t); }
     else { for (let i = 0; i <= t.length - 2; i++) keyTerms.push(t.slice(i, i + 3)); }
   }
+  // 同时保留原始问题的短词（2字）作为补充
+  const origShortTerms = [];
+  for (const t of q.split(/[\s，。、？！~]/)) {
+    if (t.length >= 2 && t.length <= 4) origShortTerms.push(t);
+  }
 
-  // 在 ASST_SUGGESTIONS 中模糊匹配打分
+  // 步骤3：在 ASST_SUGGESTIONS 中多维度打分
   const scored = [];
   const qLower = q.toLowerCase();
+  const qNormLower = qNormalized.toLowerCase();
   for (const item of ASST_SUGGESTIONS) {
     const kwLower = (item.keyword || '').toLowerCase();
     let score = 0;
-    // 完全包含用户原始问题中的某关键词
+
+    // 维度A：归一化后的关键词包含匹配（权重最高）
     for (const kt of keyTerms) {
-      if (kwLower.includes(kt.toLowerCase())) score += 2;
-      if (qLower.includes(kt.toLowerCase()) && kwLower.includes(kt.toLowerCase())) score += 1;
+      if (kwLower.includes(kt.toLowerCase())) score += 3;
     }
-    // 用户问题包含建议关键词的子串
+    // 维度B：原始问题短词与建议关键词的交叉包含
+    for (const ot of origShortTerms) {
+      if (kwLower.includes(ot.toLowerCase()) || ot.toLowerCase().includes(kwLower.slice(0, 4))) score += 2;
+      // 建议关键词的片段出现在原始问题中
+      for (let i = 0; i < kwLower.length - 1; i++) {
+        const sub = kwLower.slice(i, Math.min(i + 4, kwLower.length));
+        if (ot.toLowerCase().includes(sub) && sub.length >= 2) score += 1;
+      }
+    }
+    // 维度C：建议关键词子串出现在归一化后的问题中
     for (let i = 0; i < kwLower.length - 1; i++) {
-      const sub = kwLower.slice(i, i + 4);
+      const sub = kwLower.slice(i, Math.min(i + 4, kwLower.length));
+      if (qNormLower.includes(sub) && sub.length >= 2) score += 2;
       if (qLower.includes(sub) && sub.length >= 2) score += 1;
     }
+    // 维度D：原始问题包含建议关键词（宽松匹配）
+    if (qLower.includes(kwLower) || kwLower.includes(qLower)) score += 4;
+
     if (score > 0) scored.push({ ...item, _score: score });
   }
 
-  // 按分数降序，去重，取 Top 4
+  // 按分数降序，去重去自身，取 Top 6
   scored.sort((a, b) => b._score - a._score);
   const seen = new Set();
   const top = [];
@@ -4740,7 +4782,7 @@ function buildRelatedSuggestionsHtml(q) {
     if (seen.has(key) || key === q) continue;
     seen.add(key);
     top.push(s);
-    if (top.length >= 4) break;
+    if (top.length >= 6) break;
   }
 
   if (top.length === 0) return '';
@@ -4757,14 +4799,39 @@ function buildRelatedSuggestionsHtml(q) {
   return html;
 }
 
-// 员工主动反馈答不上的问题
+// 员工主动反馈答不上的问题（弹窗确认）
 function feedbackToHr(q) {
+  // 弹出确认弹窗
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay asst-fb-modal-overlay';
+  modal.id = 'asst-fb-confirm-modal';
+  modal.innerHTML = `
+    <div class="modal-content asst-fb-confirm" style="max-width:400px;text-align:center;">
+      <div style="font-size:36px;margin-bottom:10px;">📬</div>
+      <div style="font-size:16px;font-weight:700;color:#333;margin-bottom:8px;">反馈给 HR</div>
+      <div style="font-size:13px;color:#666;margin-bottom:16px;line-height:1.6;">
+        你想咨询的问题是：<br><strong style="color:#534AB7;">${escapeHtml(q)}</strong><br><br>已收到你的反馈，HR 会尽快补充相关内容～
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center;">
+        <button class="asst-fb-btn" onclick="confirmFeedbackToHr('${escapeAttr(q)}')" style="padding:8px 24px;">✅ 确认提交</button>
+        <button class="asst-fb-btn" onclick="closeFeedbackModal()" style="background:#f5f5f5;color:#888;border-color:#ddd;padding:8px 24px;">取消</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  setTimeout(() => modal.classList.add('show'), 10);
+}
+function confirmFeedbackToHr(q) {
   try {
     const arr = JSON.parse(localStorage.getItem('hr_feedback') || '[]');
     arr.push({ ts: new Date().toISOString(), q: q });
     localStorage.setItem('hr_feedback', JSON.stringify(arr));
-    showToast('已反馈给 HR，谢谢你的反馈 🙏');
+    closeFeedbackModal();
+    showToast('✅ 反馈已提交，感谢你的反馈 🙏');
   } catch (e) { showToast('反馈失败：' + e.message); }
+}
+function closeFeedbackModal() {
+  const m = document.getElementById('asst-fb-confirm-modal');
+  if (m) { m.classList.remove('show'); setTimeout(() => m.remove(), 200); }
 }
 
 // 打开运营数据看板（需密码或已解锁）
