@@ -1594,6 +1594,11 @@
 .asst-fb-btn { border: 1px solid #534AB7; background: #f4f2ff; color: #534AB7; padding: 7px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; font-weight: 600; }
 .asst-fb-btn:hover { background: #e9e5ff; }
 
+/* 关联推荐「或许你想问」 */
+.asst-related { border-radius: 8px; }
+.asst-rel-link { display: inline-block; color: #534AB7; font-size: 13px; text-decoration: none; padding: 4px 10px; margin: 2px 4px 2px 0; border-radius: 14px; background: #f4f2ff; border: 1px solid #e2deff; transition: all .15s; }
+.asst-rel-link:hover { background: #534AB7; color: #fff; border-color: #534AB7; }
+
 /* HR 运营数据看板 */
 .hr-data-modal { max-width: 560px; }
 .hr-data-actions { display: flex; gap: 10px; padding: 12px 18px 18px; border-top: 1px solid #eee; }
@@ -4648,11 +4653,13 @@ function assistantSend() {
     document.getElementById('asst-thinking')?.remove();
     let answerHtml = String(assistantGetAnswer(q)).replace(/\n/g, '<br>');
     // 埋点：记录查询与命中情况（item 10）
-    const isHit = !answerHtml.includes('没有收录到答案');
+    // 未命中判断：覆盖所有 fallback 路径（向导耗尽 / 意图分数低 / QA无匹配）
+    const isHit = !(answerHtml.includes('没有收录到答案') || answerHtml.includes('暂时无法准确回答') || answerHtml.includes('不太确定你的问题'));
     logAsstQuery(q, isHit);
-    // 未命中时，答案底部提供「反馈给HR」入口（item 2）
+    // 未命中时，答案底部提供「或许你想问」关联推荐 + 「反馈给HR」入口
     if (!isHit) {
-      answerHtml += '<div style="margin-top:10px;"><button class="asst-fb-btn" onclick="feedbackToHr(' + JSON.stringify(q) + ')">📣 这个问题没帮到你？反馈给 HR</button></div>';
+      answerHtml += buildRelatedSuggestionsHtml(q);
+      answerHtml += '<div style="margin-top:10px;"><button class="asst-fb-btn" onclick="feedbackToHr(' + JSON.stringify(q) + ')">📣 都不是？反馈给 HR</button></div>';
     }
     // 命中"办理入口"模块时，在答案底部追加紫色行动按钮
     const actMod = detectModuleFromQuery(q);
@@ -4691,6 +4698,63 @@ function logAsstQuery(q, hit) {
     if (arr.length > 2000) arr.splice(0, arr.length - 2000);
     localStorage.setItem('hr_query_log', JSON.stringify(arr));
   } catch (e) {}
+}
+
+// ====== 未命中关联推荐（或许你想问） ======
+function buildRelatedSuggestionsHtml(q) {
+  // 从用户问题中提取关键词（≥2字，过滤虚词）
+  const stopWords = new Set(['的','吗','呢','呀','啊','怎么','什么','哪','如何','是否','要','不','没','能','可以','需要','应该','请问','还','了','是','有','我','这','那','个','到','在','为','和','或','但','如果','因为','所以','为什么','为啥','怎样','多少','几','哪些','哪个','能不','能不能','怎么不能','为何','请不了']);
+  const rawTerms = q.replace(new RegExp([...stopWords].join('|'), 'g'), ' ').split(/\s+/).filter(t => t.length >= 2);
+  // 生成滑窗关键词
+  const keyTerms = [];
+  for (const t of rawTerms) {
+    if (t.length <= 3) { keyTerms.push(t); }
+    else { for (let i = 0; i <= t.length - 2; i++) keyTerms.push(t.slice(i, i + 3)); }
+  }
+
+  // 在 ASST_SUGGESTIONS 中模糊匹配打分
+  const scored = [];
+  const qLower = q.toLowerCase();
+  for (const item of ASST_SUGGESTIONS) {
+    const kwLower = (item.keyword || '').toLowerCase();
+    let score = 0;
+    // 完全包含用户原始问题中的某关键词
+    for (const kt of keyTerms) {
+      if (kwLower.includes(kt.toLowerCase())) score += 2;
+      if (qLower.includes(kt.toLowerCase()) && kwLower.includes(kt.toLowerCase())) score += 1;
+    }
+    // 用户问题包含建议关键词的子串
+    for (let i = 0; i < kwLower.length - 1; i++) {
+      const sub = kwLower.slice(i, i + 4);
+      if (qLower.includes(sub) && sub.length >= 2) score += 1;
+    }
+    if (score > 0) scored.push({ ...item, _score: score });
+  }
+
+  // 按分数降序，去重，取 Top 4
+  scored.sort((a, b) => b._score - a._score);
+  const seen = new Set();
+  const top = [];
+  for (const s of scored) {
+    const key = s.keyword;
+    if (seen.has(key) || key === q) continue;
+    seen.add(key);
+    top.push(s);
+    if (top.length >= 4) break;
+  }
+
+  if (top.length === 0) return '';
+  let html = '<div class="asst-related" style="margin-top:12px;padding-top:10px;border-top:1px dashed #d4d2e0;">';
+  html += '<div style="font-size:12px;color:#888;margin-bottom:6px;">🔗 或许你想问：</div>';
+  for (const t of top) {
+    const kwEsc = escapeAttr(t.keyword);
+    const detailEsc = (t.detail || '').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+    const catEsc = escapeAttr(t.category || '');
+    const modEsc = escapeAttr(t.module || '');
+    html += `<a class="asst-rel-link" href="javascript:void(0)" onclick="asstSendDirectAnswer('${kwEsc}','${detailEsc}','${catEsc}','${modEsc}')">${escapeHtml(t.keyword)}</a>`;
+  }
+  html += '</div>';
+  return html;
 }
 
 // 员工主动反馈答不上的问题
