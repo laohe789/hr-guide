@@ -3374,6 +3374,58 @@ function toggleCard(headerEl) {
   if (!wasExpanded) card.classList.add('expanded');
 }
 
+// ====== 共享卡片渲染助手（考勤/请假/保险/IT 统一复用，避免三处同步改 bug） ======
+
+// 分类网格内部 HTML（data.categories 每项：icon / label / items.length）
+function renderCategoryGridInner(data, enterFn) {
+  let html = '<div class="att-cat-grid">';
+  for (const cat of data.categories) {
+    html += '<div class="att-cat-card cat-' + cat.key + '" onclick="' + enterFn + '(\'' + cat.key + '\')">'
+      + '<span class="att-cat-icon">' + cat.icon + '</span>'
+      + '<div class="att-cat-label">' + esc(cat.label) + '</div>'
+      + '<div class="att-cat-count">' + cat.items.length + '条知识</div>'
+      + '</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+// 时间线卡片内部 HTML（不包外层 .timeline-wrap，由调用方决定包裹）
+// item: { keyword, detail, image?, imageCaption? }
+function renderTimelineCardsHtml(items) {
+  let html = '';
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    const clr = CARD_COLORS[i % CARD_COLORS.length];
+    html += '<div class="timeline-card tl-' + clr + '">'
+      + '<div class="timeline-dot"></div>'
+      + '<div class="timeline-card-header">'
+      + '<span class="timeline-num">' + (i + 1) + '</span>'
+      + '<div class="timeline-title-wrap">'
+      + '<div class="timeline-title">' + esc(item.keyword) + '</div>'
+      + '</div>'
+      + '<span class="timeline-arrow">▾</span>'
+      + '</div>'
+      + '<div class="timeline-card-body"><div class="timeline-card-inner">'
+      + item.detail;
+    if (item.image) {
+      html += '<div style="margin-top:12px;text-align:center;">'
+        + '<img src="' + item.image + '" alt="' + (item.imageCaption || '') + '" style="max-width:100%;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,0.1);">'
+        + (item.imageCaption ? '<div style="font-size:12px;color:#888;margin-top:6px;">' + esc(item.imageCaption) + '</div>' : '')
+        + '</div>';
+    }
+    html += '</div></div></div>';
+  }
+  return html;
+}
+
+// 绑定卡片展开/收起点击事件
+function bindTimelineCards(container) {
+  container.querySelectorAll('.timeline-card-header').forEach(h => {
+    h.addEventListener('click', function() { toggleCard(this); });
+  });
+}
+
 /* ========== 卡片视图：开通悦工作 ========== */
 function renderAccountCards(container) {
   container.innerHTML = '';
@@ -3664,16 +3716,7 @@ function renderAttendanceClassic(container) {
 }
 
 function renderAttendanceCategoryGrid(container) {
-  let html = '<div class="att-cat-grid">';
-  for (const cat of attendanceData.categories) {
-    html += '<div class="att-cat-card cat-' + cat.key + '" onclick="enterAttendanceCat(\'' + cat.key + '\')">'
-      + '<span class="att-cat-icon">' + cat.icon + '</span>'
-      + '<div class="att-cat-label">' + esc(cat.label) + '</div>'
-      + '<div class="att-cat-count">' + cat.items.length + '条知识</div>'
-      + '</div>';
-  }
-  html += '</div>';
-  container.innerHTML = html;
+  container.innerHTML = renderCategoryGridInner(attendanceData, 'enterAttendanceCat');
 }
 
 function renderAttendanceCards(container) {
@@ -3686,29 +3729,8 @@ function renderAttendanceCards(container) {
   const cat = attendanceData.categories.find(c => c.key === attendanceCurrentCat);
   if (!cat) return;
 
-  let html = '<div class="timeline-wrap">';
-  for (let i = 0; i < cat.items.length; i++) {
-    const item = cat.items[i];
-    const clr = CARD_COLORS[i % CARD_COLORS.length];
-    html += '<div class="timeline-card tl-' + clr + '">'
-      + '<div class="timeline-dot"></div>'
-      + '<div class="timeline-card-header">'
-      + '<span class="timeline-num">' + (i + 1) + '</span>'
-      + '<div class="timeline-title-wrap">'
-      + '<div class="timeline-title">' + esc(item.keyword) + '</div>'
-      + '</div>'
-      + '<span class="timeline-arrow">▾</span>'
-      + '</div>'
-      + '<div class="timeline-card-body"><div class="timeline-card-inner">' + item.detail + '</div></div>'
-      + '</div>';
-  }
-  html += '</div>';
-  container.innerHTML = html;
-
-  // 绑定点击事件（所有卡片默认收起）
-  container.querySelectorAll('.timeline-card-header').forEach(h => {
-    h.addEventListener('click', function() { toggleCard(this); });
-  });
+  container.innerHTML = '<div class="timeline-wrap">' + renderTimelineCardsHtml(cat.items) + '</div>';
+  bindTimelineCards(container);
 }
 
 
@@ -3775,15 +3797,7 @@ function renderLeaveCategoryGrid(container) {
     + '以下内容为智能助手根据公司制度文件整理，仅供参考。如与正式制度有出入，请以原文件为准。'
     + '<br><a href="https://kms.yuexiuproperty.cn/kms/multidoc/kms_multidoc_knowledge/kmsMultidocKnowledge.do?method=view&fdId=1828bc3ab434223146060cf47aa9fae8" target="_blank" class="leave-advisory-link">📄 查看休假管理细则原文</a>'
     + '</div>';
-  html += '<div class="att-cat-grid">';
-  for (const cat of leaveData.categories) {
-    html += '<div class="att-cat-card cat-' + cat.key + '" onclick="enterLeaveCat(\'' + cat.key + '\')">'
-      + '<span class="att-cat-icon">' + cat.icon + '</span>'
-      + '<div class="att-cat-label">' + esc(cat.label) + '</div>'
-      + '<div class="att-cat-count">' + cat.items.length + '条知识</div>'
-      + '</div>';
-  }
-  html += '</div>';
+  html += renderCategoryGridInner(leaveData, 'enterLeaveCat');
   container.innerHTML = html;
 }
 
@@ -3803,23 +3817,7 @@ function renderItCards(container) {
     html += '<span style="font-size:12px;color:#999;">（' + cat.items.length + '条）</span>';
     html += '</div>';
 
-    html += '<div class="timeline-wrap"><div class="timeline-line"></div>';
-    for (let i = 0; i < cat.items.length; i++) {
-      const item = cat.items[i];
-      const clr = CARD_COLORS[i % CARD_COLORS.length];
-      html += '<div class="timeline-card tl-' + clr + '">'
-        + '<div class="timeline-dot"></div>'
-        + '<div class="timeline-card-header">'
-        + '<span class="timeline-num">' + (i + 1) + '</span>'
-        + '<div class="timeline-title-wrap">'
-        + '<div class="timeline-title">' + esc(item.keyword) + '</div>'
-        + '</div>'
-        + '<span class="timeline-arrow">▾</span>'
-        + '</div>'
-        + '<div class="timeline-card-body"><div class="timeline-card-inner">' + item.detail + '</div></div>'
-        + '</div>';
-    }
-    html += '</div></div>';
+    html += '<div class="timeline-wrap"><div class="timeline-line"></div>' + renderTimelineCardsHtml(cat.items) + '</div></div>';
   }
 
   container.innerHTML = html;
@@ -3855,28 +3853,8 @@ function renderLeaveCards(container) {
   const cat = leaveData.categories.find(c => c.key === leaveCurrentCat);
   if (!cat) return;
 
-  let html = '<div class="timeline-wrap">';
-  for (let i = 0; i < cat.items.length; i++) {
-    const item = cat.items[i];
-    const clr = CARD_COLORS[i % CARD_COLORS.length];
-    html += '<div class="timeline-card tl-' + clr + '">'
-      + '<div class="timeline-dot"></div>'
-      + '<div class="timeline-card-header">'
-      + '<span class="timeline-num">' + (i + 1) + '</span>'
-      + '<div class="timeline-title-wrap">'
-      + '<div class="timeline-title">' + esc(item.keyword) + '</div>'
-      + '</div>'
-      + '<span class="timeline-arrow">▾</span>'
-      + '</div>'
-      + '<div class="timeline-card-body"><div class="timeline-card-inner">' + item.detail + '</div></div>'
-      + '</div>';
-  }
-  html += '</div>';
-  container.innerHTML = html;
-
-  container.querySelectorAll('.timeline-card-header').forEach(h => {
-    h.addEventListener('click', function() { toggleCard(this); });
-  });
+  container.innerHTML = '<div class="timeline-wrap">' + renderTimelineCardsHtml(cat.items) + '</div>';
+  bindTimelineCards(container);
 }
 
 
@@ -3906,53 +3884,14 @@ function renderInsuranceBanner() {
 function renderInsuranceCards(container) {
   let html = renderInsuranceBanner();
   if (insuranceShowCategories) {
-    html += renderInsuranceCategoryGridInner();
+    html += renderCategoryGridInner(insuranceData, 'enterInsuranceCat');
   } else {
     const cat = insuranceData.categories.find(c => c.key === insuranceCurrentCat);
     if (!cat) { container.innerHTML = html; return; }
-    html += '<div class="timeline-wrap">';
-    for (let i = 0; i < cat.items.length; i++) {
-      const item = cat.items[i];
-      const clr = CARD_COLORS[i % CARD_COLORS.length];
-      html += '<div class="timeline-card tl-' + clr + '">'
-        + '<div class="timeline-dot"></div>'
-        + '<div class="timeline-card-header">'
-        + '<span class="timeline-num">' + (i + 1) + '</span>'
-        + '<div class="timeline-title-wrap">'
-        + '<div class="timeline-title">' + esc(item.keyword) + '</div>'
-        + '</div>'
-        + '<span class="timeline-arrow">▾</span>'
-        + '</div>'
-        + '<div class="timeline-card-body"><div class="timeline-card-inner">'
-        + item.detail;
-      if (item.image) {
-        html += '<div style="margin-top:12px;text-align:center;">'
-          + '<img src="' + item.image + '" alt="' + (item.imageCaption || '') + '" style="max-width:100%;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,0.1);">'
-          + (item.imageCaption ? '<div style="font-size:12px;color:#888;margin-top:6px;">' + esc(item.imageCaption) + '</div>' : '')
-          + '</div>';
-      }
-      html += '</div></div></div>';
-    }
-    html += '</div>';
+    html += '<div class="timeline-wrap">' + renderTimelineCardsHtml(cat.items) + '</div>';
   }
   container.innerHTML = html;
-
-  container.querySelectorAll('.timeline-card-header').forEach(h => {
-    h.addEventListener('click', function() { toggleCard(this); });
-  });
-}
-
-function renderInsuranceCategoryGridInner() {
-  let html = '<div class="att-cat-grid">';
-  for (const cat of insuranceData.categories) {
-    html += '<div class="att-cat-card cat-' + cat.key + '" onclick="enterInsuranceCat(\'' + cat.key + '\')">'
-      + '<span class="att-cat-icon">' + cat.icon + '</span>'
-      + '<div class="att-cat-label">' + esc(cat.label) + '</div>'
-      + '<div class="att-cat-count">' + cat.items.length + '条知识</div>'
-      + '</div>';
-  }
-  html += '</div>';
-  return html;
+  bindTimelineCards(container);
 }
 
 function enterInsuranceCat(catKey) {
@@ -5085,26 +5024,6 @@ document.addEventListener('click', function(e) {
 });
 
 // ====== HR小助手 问答机器人（v2 智能语义匹配） ======
-const ASST_SYSTEM_PROMPT = `你是「HR助手」平台的智能客服，服务于悦汇城全体员工。你的职责是帮助员工快速找到人力资源相关问题的答案和操作指引。
-
-## 身份与语气
-- 称呼用户为「你」，语气亲切、温暖但不失专业
-- 像一位热心的 HR 同事，耐心解答，不说官话、套话
-- 回答简洁直接，避免长篇大论
-
-## 知识范围
-- 账号开通：悦工作激活、钉钉注册、初始密码、登录问题
-- 考勤指引：打卡规则、补卡流程、迟到早退、外勤报备、考勤异常
-- 请假指南：年假/病假/事假/婚假/产假/陪产假/丧假/护理假
-- IT办公指引：电脑配置、打印机、WiFi
-- 员工转正：试用期考核、转正申请、材料、时间节点
-- 员工离职：离职流程、工作交接、手续办理、附件清单
-
-## 回答规则
-1. 优先指向平台已有内容，给出答案摘要后引导查看对应模块
-2. 不知道时坦诚承认，建议联系HR部门
-3. 不编造政策、日期、金额等信息
-4. 涉及薪资绩效等敏感问题建议联系HR部门`;
 
 // 小精灵图标 SVG（聊天中用）
 const ASST_SPRITE = '<img src="attachments/asst-avatar-new.png" alt="HR小助手" style="width:100%;height:100%;object-fit:contain;border-radius:50%;">';
