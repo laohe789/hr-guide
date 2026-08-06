@@ -1974,10 +1974,9 @@
         <div class="module-badge badge-coral">🔒 需确认</div>
       </div>
       <div class="module-card card-amber" data-module="more" onclick="navigateTo('more')">
-        <div class="module-icon icon-amber">❓</div>
-        <div class="module-name">更多……</div>
-        <div class="module-desc">敬请期待</div>
-        <div class="module-badge badge-gray">敬请期待</div>
+        <div class="module-icon icon-amber">📚</div>
+        <div class="module-name">指南汇总</div>
+        <div class="module-desc">制度 · 下载 · 高频</div>
       </div>
     </div>
 
@@ -2405,6 +2404,7 @@ function moduleLabelOf(moduleKey) {
   const map = {
     account: '账号开通', promotion: '员工转正', resign: '员工离职',
     attendance: '考勤指引', leave: '请假指南', it_guide: 'IT办公指引', insurance: '商业保险',
+    more: '指南汇总',
   };
   return map[moduleKey] || moduleKey;
 }
