@@ -1857,6 +1857,45 @@
   transition: background .2s;
 }
 .leave-advisory-link:hover { background: #4338CA; }
+
+/* ====== 「更多」汇总/常用页 ====== */
+.more-section { margin-bottom: 26px; }
+.more-section-title {
+  font-size: 16px; font-weight: 700; color: #3a2f7a;
+  margin-bottom: 14px; padding-left: 10px; border-left: 4px solid #534AB7;
+}
+.more-doc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+.more-doc-card {
+  background: #faf9ff; border: 1px solid #ece9fb; border-radius: 14px;
+  padding: 18px 16px; cursor: pointer; transition: transform .18s, box-shadow .18s, border-color .18s;
+}
+.more-doc-card:hover { transform: translateY(-3px); box-shadow: 0 8px 22px rgba(83,74,183,.14); border-color: #c9c2f5; }
+.more-doc-icon { font-size: 30px; margin-bottom: 8px; }
+.more-doc-name { font-size: 15px; font-weight: 700; color: #333; margin-bottom: 6px; }
+.more-doc-desc { font-size: 12.5px; color: #888; line-height: 1.55; margin-bottom: 12px; }
+.more-doc-go { font-size: 13px; font-weight: 600; color: #534AB7; }
+.more-dl-list { display: flex; flex-direction: column; gap: 10px; }
+.more-faq-list { display: flex; flex-direction: column; gap: 8px; }
+.more-faq-item {
+  display: flex; align-items: center; justify-content: space-between;
+  background: #faf9ff; border: 1px solid #ece9fb; border-radius: 10px;
+  padding: 12px 16px; cursor: pointer; transition: background .18s, transform .12s;
+}
+.more-faq-item:hover { background: #f0edff; transform: translateX(3px); }
+.more-faq-q { font-size: 14px; font-weight: 600; color: #333; }
+.more-faq-mod { font-size: 11px; color: #fff; background: #534AB7; border-radius: 20px; padding: 2px 10px; }
+
+/* ====== 首页全局搜索 ====== */
+.home-search-wrap { display: block; }
+.home-search-wrap .detail-search-input { box-shadow: 0 2px 10px rgba(83,74,183,.06); }
+.detail-search-result-item.home-result-item { display: flex; align-items: flex-start; }
+.home-sr-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 44px; height: 22px; border-radius: 6px;
+  color: #fff; font-size: 11px; font-weight: 600;
+  margin-right: 10px; flex-shrink: 0; margin-top: 1px;
+}
+.home-sr-main { flex: 1; min-width: 0; }
 </style>
 </head>
 <body>
@@ -1884,6 +1923,17 @@
         <span class="assistant-tag" onclick="assistantQuick('转正要多久')">转正要多久？</span>
       </div>
       <div class="assistant-chat-area" id="asst-chat"></div>
+    </div>
+
+    <!-- 首页全局搜索（跨模块命中） -->
+    <div class="detail-search-wrap home-search-wrap" id="home-search-wrap" style="margin: 4px auto 18px;">
+      <span class="detail-search-icon">🔍</span>
+      <input type="text" class="detail-search-input" id="home-search-input"
+             placeholder="搜索全部指引：考勤 / 请假 / 转正 / 保险 / IT..."
+             oninput="homeSearchInput(this.value)"
+             onkeydown="homeSearchKey(event)">
+      <button class="detail-search-clear" id="home-search-clear" onclick="homeSearchClear()">✕</button>
+      <div class="detail-search-results" id="home-search-results"></div>
     </div>
 
     <div class="module-grid" id="module-grid">
@@ -1985,6 +2035,7 @@
   <div class="tab-content" id="tab-leave"></div>
   <div class="tab-content" id="tab-it_guide"></div>
   <div class="tab-content" id="tab-insurance"></div>
+  <div class="tab-content" id="tab-more"></div>
 
 </div>
 
@@ -2124,6 +2175,65 @@ function buildAsstSuggestionIndex() {
     }
   }
 
+  // 商业保险数据（与考勤同结构：categories[].items[].keyword/detail）
+  if (typeof insuranceData !== 'undefined' && insuranceData.categories) {
+    for (const cat of insuranceData.categories) {
+      for (const item of cat.items) {
+        index.push({
+          keyword: item.keyword,
+          detail: item.detail || '',
+          category: cat.label,
+          categoryKey: cat.key,
+          module: 'insurance',
+          moduleLabel: '商业保险'
+        });
+      }
+    }
+  }
+
+  // 账号开通数据（steps[].title 作为 keyword）
+  if (typeof accountData !== 'undefined' && accountData.steps) {
+    for (const s of accountData.steps) {
+      index.push({
+        keyword: s.title,
+        detail: '<b>' + s.title + '</b><br>' + (s.desc || '') + (s.tip ? '<br>' + s.tip : ''),
+        category: '账号开通',
+        categoryKey: 'account',
+        module: 'account',
+        moduleLabel: '账号开通'
+      });
+    }
+  }
+
+  // 员工转正数据（stages[].title 作为 keyword）
+  if (typeof promotionData !== 'undefined' && promotionData.stages) {
+    for (const s of promotionData.stages) {
+      index.push({
+        keyword: s.title,
+        detail: '<b>' + s.title + '</b><br>' + (s.desc || '') + ((s.items && s.items.length) ? '<br>' + s.items.join('<br>') : ''),
+        category: '员工转正',
+        categoryKey: 'promotion',
+        module: 'promotion',
+        moduleLabel: '员工转正'
+      });
+    }
+  }
+
+  // 员工离职数据（steps[].title 作为 keyword，detail 可能是数组或字符串）
+  if (typeof resignData !== 'undefined' && resignData.steps) {
+    for (const s of resignData.steps) {
+      let dt = ''; if (Array.isArray(s.detail)) dt = s.detail.join(' '); else if (typeof s.detail === 'string') dt = s.detail;
+      index.push({
+        keyword: s.title,
+        detail: '<b>' + s.title + '</b><br>' + (s.desc || '') + (dt ? '<br>' + dt : ''),
+        category: '员工离职',
+        categoryKey: 'resign',
+        module: 'resign',
+        moduleLabel: '员工离职'
+      });
+    }
+  }
+
   return index;
 }
 
@@ -2231,6 +2341,72 @@ function renderModuleCards(moduleKey, container) {
   else if (moduleKey === 'leave') renderLeaveCards(container);
   else   if (moduleKey === 'it_guide') renderItCards(container);
   else if (moduleKey === 'insurance') renderInsuranceCards(container);
+  else if (moduleKey === 'more') renderMorePage(container);
+}
+
+// ====== 「更多」汇总/常用页 ======
+// 点击制度文件入口：直接打开对应模块的「经典文档」视图（政策原文已在应用内渲染）
+function openModuleDoc(moduleKey) {
+  detailViewMode = 'classic';
+  switchToDetail(moduleKey);
+}
+
+function renderMorePage(container) {
+  if (typeof MORE_PAGE === 'undefined') { container.innerHTML = ''; return; }
+  let html = '';
+
+  // 区块1：制度文件入口
+  html += '<div class="more-section">';
+  html += '<div class="more-section-title">📚 制度文件入口</div>';
+  html += '<div class="more-doc-grid">';
+  for (const d of MORE_PAGE.docs) {
+    const icon = d.module === 'attendance' ? '🕐' : d.module === 'leave' ? '📝' : '🛡️';
+    html += '<div class="more-doc-card" onclick="openModuleDoc(\'' + d.module + '\')">'
+      + '<div class="more-doc-icon">' + icon + '</div>'
+      + '<div class="more-doc-name">' + escapeHtml(d.label) + '</div>'
+      + '<div class="more-doc-desc">' + escapeHtml(d.desc) + '</div>'
+      + '<div class="more-doc-go">查看原文 →</div>'
+      + '</div>';
+  }
+  html += '</div></div>';
+
+  // 区块2：常用下载
+  html += '<div class="more-section">';
+  html += '<div class="more-section-title">📥 常用下载</div>';
+  html += '<div class="more-dl-list">';
+  for (const att of MORE_PAGE.downloads) {
+    html += renderAttachmentItem(att);
+  }
+  html += '</div></div>';
+
+  // 区块3：高频问题 Top
+  html += '<div class="more-section">';
+  html += '<div class="more-section-title">🔥 高频问题 Top</div>';
+  html += '<div class="more-faq-list">';
+  for (const entry of MORE_PAGE.faqTop) {
+    const found = (typeof ASST_SUGGESTIONS !== 'undefined')
+      ? ASST_SUGGESTIONS.find(s => s.keyword === entry.target) : null;
+    if (!found) continue;
+    const kwEsc = escapeAttr(found.keyword);
+    const detailEsc = (found.detail || '').replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+    const catEsc = escapeAttr(found.category || '');
+    html += '<div class="more-faq-item" onclick="showAnswerModal(\'' + catEsc + '\',\'' + kwEsc + '\',\'' + detailEsc + '\')">'
+      + '<span class="more-faq-q">' + escapeHtml(entry.q) + '</span>'
+      + '<span class="more-faq-mod">' + escapeHtml(moduleLabelOf(found.module)) + '</span>'
+      + '</div>';
+  }
+  html += '</div></div>';
+
+  container.innerHTML = html;
+}
+
+// 模块 key → 中文标签
+function moduleLabelOf(moduleKey) {
+  const map = {
+    account: '账号开通', promotion: '员工转正', resign: '员工离职',
+    attendance: '考勤指引', leave: '请假指南', it_guide: 'IT办公指引', insurance: '商业保险',
+  };
+  return map[moduleKey] || moduleKey;
 }
 
 function toggleCard(headerEl) {
@@ -3271,7 +3447,8 @@ const tabMap = {
   attendance: { render: renderAttendanceClassic, locked: false },
   leave: { render: renderLeaveClassic, locked: false },
   it_guide: { render: renderItClassic, locked: false },
-  insurance: { render: renderInsuranceClassic, locked: false }
+  insurance: { render: renderInsuranceClassic, locked: false },
+  more: { render: renderMorePage, locked: false }
 };
 
 document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -3322,7 +3499,7 @@ function navigateTo(moduleKey) {
 
   // 未完成模块：Toast 提示
   if (moduleKey === 'more') {
-    showToast('✨ 该模块即将上线，敬请期待！');
+    switchToDetail('more');
     return;
   }
 
@@ -3343,7 +3520,8 @@ function switchToDetail(moduleKey) {
                  moduleKey === 'attendance' ? 'attendance' :
                  moduleKey === 'leave' ? 'leave' :
                  moduleKey === 'it_guide' ? 'it_guide' :
-                 moduleKey === 'insurance' ? 'insurance' : 'resign';
+                 moduleKey === 'insurance' ? 'insurance' :
+                 moduleKey === 'more' ? 'more' : 'resign';
 
   // 进入考勤模块时重置子模块
   if (moduleKey === 'attendance') { attendanceShowCategories = true; attendanceCurrentCat = 'check'; }
@@ -3368,8 +3546,12 @@ function switchToDetail(moduleKey) {
     renderModuleCards(moduleKey, target);
   }
 
-  // 初始化搜索框
-  initDetailSearch(moduleKey);
+  // 初始化搜索框（more 汇总页无模块内搜索，隐藏）
+  if (moduleKey === 'more') {
+    document.getElementById('detail-search-wrap').style.display = 'none';
+  } else {
+    initDetailSearch(moduleKey);
+  }
 
   updateCatBackBtn();
 
@@ -3644,6 +3826,177 @@ function clearDetailSearch() {
   input.value = '';
   clearBtn.style.display = 'none';
   results.style.display = 'none';
+}
+
+// ====== 首页全局搜索（跨模块命中） ======
+const HOME_SEARCH_MODULE_META = {
+  attendance: { label: '考勤', color: '#e8935a' },
+  leave: { label: '请假', color: '#2bb38a' },
+  it_guide: { label: 'IT', color: '#5b6ee1' },
+  insurance: { label: '保险', color: '#d6336c' },
+  account: { label: '账号', color: '#6d5dd3' },
+  promotion: { label: '转正', color: '#c79a16' },
+  resign: { label: '离职', color: '#e0675a' },
+};
+
+let homeSearchIndex = null;
+
+function buildGlobalSearchIndex() {
+  const idx = [];
+  if (typeof attendanceData !== 'undefined') {
+    for (const c of attendanceData.categories) for (const it of c.items)
+      idx.push({ text: c.label + ' ' + it.keyword + ' ' + stripHtml(it.detail), cat: c.label, catKey: c.key, keyword: it.keyword, detail: it.detail, module: 'attendance' });
+  }
+  if (typeof leaveData !== 'undefined') {
+    for (const c of leaveData.categories) for (const it of c.items)
+      idx.push({ text: c.label + ' ' + it.keyword + ' ' + stripHtml(it.detail), cat: c.label, catKey: c.key, keyword: it.keyword, detail: it.detail, module: 'leave' });
+  }
+  if (typeof itData !== 'undefined') {
+    for (const c of itData.categories) for (const it of c.items)
+      idx.push({ text: c.label + ' ' + it.keyword + ' ' + stripHtml(it.detail), cat: c.label, catKey: c.key, keyword: it.keyword, detail: it.detail, module: 'it_guide' });
+  }
+  if (typeof insuranceData !== 'undefined') {
+    for (const c of insuranceData.categories) for (const it of c.items)
+      idx.push({ text: c.label + ' ' + it.keyword + ' ' + stripHtml(it.detail), cat: c.label, catKey: c.key, keyword: it.keyword, detail: it.detail, module: 'insurance' });
+  }
+  if (typeof accountData !== 'undefined') {
+    for (const s of accountData.steps) {
+      const detail = '<b>' + s.title + '</b><br>' + (s.desc || '') + (s.tip ? '<br>' + s.tip : '');
+      idx.push({ text: s.title + ' ' + (s.desc || '') + ' ' + (s.tip || ''), cat: '账号开通', keyword: s.title, detail: detail, module: 'account' });
+    }
+  }
+  if (typeof promotionData !== 'undefined') {
+    for (const s of promotionData.stages) {
+      const detail = '<b>' + s.title + '</b><br>' + (s.desc || '') + ((s.items && s.items.length) ? '<br>' + s.items.join('<br>') : '');
+      idx.push({ text: s.title + ' ' + (s.subtitle || '') + ' ' + (s.desc || '') + ' ' + (s.items || []).join(' '), cat: '员工转正', keyword: s.title, detail: detail, module: 'promotion' });
+    }
+  }
+  if (typeof resignData !== 'undefined') {
+    for (const s of resignData.steps) {
+      let dt = ''; if (Array.isArray(s.detail)) dt = s.detail.join(' '); else if (typeof s.detail === 'string') dt = s.detail;
+      const detail = '<b>' + s.title + '</b><br>' + (s.desc || '') + (dt ? '<br>' + dt : '');
+      idx.push({ text: s.title + ' ' + (s.desc || '') + ' ' + dt, cat: '员工离职', keyword: s.title, detail: detail, module: 'resign' });
+    }
+  }
+  return idx;
+}
+
+function homeSearchEnsureInit() {
+  if (homeSearchIndex) return;
+  homeSearchIndex = buildGlobalSearchIndex();
+  const wrap = document.getElementById('home-search-wrap');
+  document.addEventListener('click', function (e) {
+    if (!wrap.contains(e.target)) {
+      const r = document.getElementById('home-search-results');
+      if (r) r.style.display = 'none';
+    }
+  });
+}
+
+function homeSearchInput(val) {
+  homeSearchEnsureInit();
+  const input = document.getElementById('home-search-input');
+  const clearBtn = document.getElementById('home-search-clear');
+  const results = document.getElementById('home-search-results');
+  const kw = (val || '').trim().toLowerCase();
+  clearBtn.style.display = kw ? 'block' : 'none';
+  if (!kw) { results.style.display = 'none'; return; }
+
+  let matches = homeSearchIndex.filter(item => item.text.toLowerCase().includes(kw));
+  const seen = new Set(matches.map(m => m.keyword + m.module));
+
+  // 别名匹配（考勤）
+  if (typeof attendanceSearchAliases !== 'undefined') {
+    for (const [ak, kws] of Object.entries(attendanceSearchAliases)) {
+      if (ak.includes(kw) || kw.includes(ak)) {
+        for (const kt of kws) {
+          if (!seen.has(kt + 'attendance')) {
+            const f = homeSearchIndex.find(i => i.keyword === kt && i.module === 'attendance');
+            if (f) { matches.push(f); seen.add(kt + 'attendance'); }
+          }
+        }
+      }
+    }
+  }
+
+  // 分词兜底
+  if (matches.length < 3 && kw.length >= 3) {
+    for (let i = 0; i <= kw.length - 2; i++) {
+      const tk = kw.substring(i, i + 2);
+      for (const it of homeSearchIndex) {
+        if (!seen.has(it.keyword + it.module) && it.text.toLowerCase().includes(tk)) {
+          matches.push(it); seen.add(it.keyword + it.module);
+        }
+      }
+    }
+  }
+
+  matches = matches.slice(0, 20);
+
+  if (matches.length === 0) {
+    results.innerHTML = '<div class="detail-search-no-result">未找到匹配内容，换个关键词试试～</div>';
+  } else {
+    let html = '';
+    for (const m of matches) {
+      const meta = HOME_SEARCH_MODULE_META[m.module] || { label: m.module, color: '#888' };
+      const highlightedKw = esc(m.keyword).replace(
+        new RegExp('(' + kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi'),
+        '<span class="search-highlight">$1</span>'
+      );
+      let preview = '';
+      if (m.detail) {
+        preview = stripHtml(m.detail).substring(0, 70);
+        if (stripHtml(m.detail).length > 70) preview += '...';
+      }
+      html += '<div class="detail-search-result-item home-result-item" data-module="' + esc(m.module) + '" data-keyword="' + esc(m.keyword) + '">'
+        + '<span class="home-sr-badge" style="background:' + meta.color + '">' + esc(meta.label) + '</span>'
+        + '<div class="home-sr-main">'
+        + '<div class="sr-cat">' + esc(m.cat) + '</div>'
+        + '<div class="sr-title">' + highlightedKw + '</div>'
+        + (preview ? '<div class="sr-preview">' + esc(preview) + '</div>' : '')
+        + '</div></div>';
+    }
+    results.innerHTML = html;
+  }
+  results.style.display = 'block';
+
+  results.querySelectorAll('.home-result-item').forEach(el => {
+    el.addEventListener('click', function () {
+      const module = this.dataset.module;
+      const keyword = this.dataset.keyword;
+      const entry = homeSearchIndex.find(i => i.module === module && i.keyword === keyword);
+      if (entry) homeSearchJump(entry);
+    });
+  });
+}
+
+function homeSearchKey(e) {
+  if (e.key === 'Enter') {
+    const first = document.querySelector('#home-search-results .home-result-item');
+    if (first) { first.click(); return; }
+  }
+  if (e.key === 'Escape') { homeSearchClear(); }
+}
+
+function homeSearchClear() {
+  const input = document.getElementById('home-search-input');
+  const cb = document.getElementById('home-search-clear');
+  const r = document.getElementById('home-search-results');
+  input.value = '';
+  cb.style.display = 'none';
+  r.style.display = 'none';
+}
+
+function homeSearchJump(entry) {
+  const r = document.getElementById('home-search-results');
+  if (r) r.style.display = 'none';
+  // 离职内容受密码保护：搜索结果直接弹出公开答案，不触发离职流程确认弹窗
+  if (entry.module === 'resign') {
+    showAnswerModal(entry.cat, entry.keyword, entry.detail);
+    return;
+  }
+  navigateTo(entry.module);
+  showAnswerModal(entry.cat, entry.keyword, entry.detail);
 }
 
 // Q&A 答案弹窗
