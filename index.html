@@ -4181,6 +4181,21 @@ function detectNegation(rawQ, normalizedKw) {
   return penalized;
 }
 
+// ====== 能力否定检测：识别"不能/不了/无法/失败/不行"类问题 ======
+// 返回 'cannot' | 'failure' | null
+function detectQueryNegationType(q) {
+  const cannotPatterns = /不能|不了|无法|不许|不让|不可以|不准|没法|请不了|登不上|连不上|打不开|发不了|找不到/;
+  const failurePatterns = /失败|报错|出错|错误|不行|坏了|坏了|异常/;
+  if (cannotPatterns.test(q)) return 'cannot';
+  if (failurePatterns.test(q)) return 'failure';
+  return null;
+}
+
+// 检测某个关键词是否也带有否定含义（用于匹配对齐）
+function keywordHasNegation(kw) {
+  return /不能|不了|无法|不许|不让|失败|报错|出错|不行|找不到|登不上/.test(kw);
+}
+
 // ========== Q&A 精确匹配：从考勤/请假/IT数据中搜索最相关的原始答案 ==========
 function searchQAExactMatch(originalQ, kw, matchedIntent) {
   // 根据命中的意图决定搜索哪些数据源
@@ -4238,6 +4253,9 @@ function searchQAExactMatch(originalQ, kw, matchedIntent) {
 
   if (sources.length === 0) return null;
 
+  // ★ 否定语境检测：用户问"不能/不了/失败"时，优先匹配同类问题
+  const queryNegType = detectQueryNegationType(originalQ);
+
   let best = null;
   let bestScore = 0;
 
@@ -4275,6 +4293,17 @@ function searchQAExactMatch(originalQ, kw, matchedIntent) {
     // ★ 多词命中率加成：命中至少2个不同实词即算强匹配
     if (hitTerms >= 2) score += hitTerms * 3;
     if (hitTerms >= 2 && keyTerms.length >= 2) score += 10; // 命中2个及以上 → 强匹配
+
+    // ★ 否定语境对齐：用户问"不能/不了"时，优先推荐同类否定问题
+    if (queryNegType) {
+      if (keywordHasNegation(s.keyword)) {
+        score += 8; // 同为否定类问题，大幅加分
+      } else {
+        // 用户问"为什么不能XX"但匹配到的是普通描述性条目（如"调休假指南"）
+        // 如果分数不是特别高，降权避免错配
+        if (score < 12) score -= 5;
+      }
+    }
 
     if (score > bestScore) { bestScore = score; best = s; }
   }
@@ -4765,6 +4794,12 @@ function buildRelatedSuggestionsHtml(q) {
     }
     // 维度D：原始问题包含建议关键词（宽松匹配）
     if (qLower.includes(kwLower) || kwLower.includes(qLower)) score += 4;
+
+    // 维度E：否定语境对齐——用户问"不能/不了"时，同类否定问题大幅加分
+    const qNegType = detectQueryNegationType(q);
+    if (qNegType && keywordHasNegation(item.keyword || '')) {
+      score += 8;
+    }
 
     if (score > 0) scored.push({ ...item, _score: score });
   }
