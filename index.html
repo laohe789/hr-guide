@@ -600,6 +600,7 @@
 .module-card.card-amber   { background: #fffbea; border: 1px solid #fde68a; }
 .module-card.card-teal    { background: #e8faf3; border: 1px solid #c5f0de; }
 .module-card.card-indigo  { background: #eef2ff; border: 1px solid #c7d2fe; }
+.module-card.card-sky     { background: #eaf6ff; border: 1px solid #bfe4fb; }
 
 .module-icon {
   width: 58px;
@@ -625,6 +626,7 @@
 .icon-amber  { background: #fde68a; }
 .icon-teal   { background: #b5f0dd; }
 .icon-indigo { background: #c7d2fe; }
+.icon-sky    { background: #a9def7; }
 
 .module-name {
   font-size: 16px;
@@ -1404,6 +1406,16 @@
 }
 .detail-cat-back:hover { background: #E3DFFB; box-shadow: 0 2px 6px rgba(83,74,183,0.18); }
 
+/* 返回指南汇总按钮（蓝色调，区别于紫色「返回分类」） */
+.detail-more-back {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 13px; font-weight: 700; color: #1e62c5;
+  background: #eaf6ff; border: 1px solid #bfe4fb;
+  padding: 4px 12px; border-radius: 14px; cursor: pointer;
+  transition: background 0.18s, box-shadow 0.18s;
+}
+.detail-more-back:hover { background: #d6edff; box-shadow: 0 2px 6px rgba(30,98,197,0.18); }
+
 /* 考勤详细视图：文档直出排版 */
 .att-doc-section { margin-bottom: 28px; }
 .att-doc-cat-title { font-size: 18px; font-weight: 800; color: #534AB7; padding: 10px 14px; background: linear-gradient(135deg, #f4f2ff, #faf9ff); border-radius: 10px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
@@ -1973,8 +1985,8 @@
         <div class="module-desc">需确认</div>
         <div class="module-badge badge-coral">🔒 需确认</div>
       </div>
-      <div class="module-card card-amber" data-module="more" onclick="navigateTo('more')">
-        <div class="module-icon icon-amber">📚</div>
+      <div class="module-card card-sky" data-module="more" onclick="navigateTo('more')">
+        <div class="module-icon icon-sky">📚</div>
         <div class="module-name">指南汇总</div>
         <div class="module-desc">制度 · 下载 · 高频</div>
       </div>
@@ -2002,6 +2014,7 @@
     <div class="detail-nav-left">
       <span class="detail-back" onclick="goHome()">← 返回首页</span>
       <span class="detail-cat-back" id="detail-cat-back" onclick="backToCurrentCategory()" style="display:none;">← 返回分类</span>
+      <span class="detail-more-back" id="detail-more-back" onclick="backToMorePage()" style="display:none;">← 返回指南汇总</span>
     </div>
     <div class="view-toggle" id="view-toggle">
       <span class="vt-opt" data-mode="classic" onclick="switchViewMode('classic')">📋 详细</span>
@@ -2298,6 +2311,8 @@ function getActionBtnHtml(module) {
 // ============================================================
 let detailViewMode = 'card';
 let currentDetailModule = null;
+// 标记当前详情是从「指南汇总」下钻进来的，用于显示「返回指南汇总」按钮
+let detailReturnToMore = false;
 
 /* [data.js] CARD_COLORS */
 
@@ -2347,6 +2362,7 @@ function renderModuleCards(moduleKey, container) {
 // 点击制度文件入口：直接打开对应模块的「经典文档」视图（政策原文已在应用内渲染）
 function openModuleDoc(moduleKey) {
   detailViewMode = 'classic';
+  detailReturnToMore = true;
   switchToDetail(moduleKey);
 }
 
@@ -2971,6 +2987,12 @@ function backToCurrentCategory() {
   else if (currentDetailModule === 'insurance') backToInsuranceCategories();
 }
 
+// 从「指南汇总」下钻进的模块 → 返回汇总页而非首页
+function backToMorePage() {
+  detailReturnToMore = false;
+  switchToDetail('more');
+}
+
 function updateCatBackBtn() {
   const btn = document.getElementById('detail-cat-back');
   if (!btn) return;
@@ -2981,6 +3003,12 @@ function updateCatBackBtn() {
     else if (currentDetailModule === 'insurance' && !insuranceShowCategories) show = true;
   }
   btn.style.display = show ? 'inline-flex' : 'none';
+
+  // 返回指南汇总按钮：仅当从汇总页下钻进来时显示
+  const moreBtn = document.getElementById('detail-more-back');
+  if (moreBtn) {
+    moreBtn.style.display = (detailReturnToMore && currentDetailModule && currentDetailModule !== 'more') ? 'inline-flex' : 'none';
+  }
 }
 
 function switchInsuranceCat(catKey) {
@@ -3491,6 +3519,7 @@ document.querySelectorAll('.module-card').forEach(card => {
 
 // 首页 → 详情页 路由
 function navigateTo(moduleKey) {
+  detailReturnToMore = false;
   // 离职模块：先弹出俏皮确认弹窗
   if (moduleKey === 'resign') {
     document.getElementById('quit-overlay').classList.add('show');
@@ -3548,6 +3577,7 @@ function switchToDetail(moduleKey) {
 
   // 初始化搜索框（more 汇总页无模块内搜索，隐藏）
   if (moduleKey === 'more') {
+    detailReturnToMore = false;
     document.getElementById('detail-search-wrap').style.display = 'none';
   } else {
     initDetailSearch(moduleKey);
@@ -4123,6 +4153,7 @@ function goHome() {
   // 重置详情页模式状态
   detailViewMode = 'card';
   currentDetailModule = null;
+  detailReturnToMore = false;
   attendanceShowCategories = true;
   attendanceCurrentCat = 'check';
   leaveShowCategories = true;
