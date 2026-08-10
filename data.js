@@ -319,6 +319,10 @@ const attendanceData = {
         {
           keyword: '外勤能否后补',
           detail: '外勤（外出申请）<span class="att-warn">必须提前申请</span>。如事发突然，后补时请补上相关佐证材料。'
+        },
+        {
+          keyword: '是否可以连续外勤',
+          detail: '可以。比如你的打卡时间是9-18，那就选例如8月10日9:00 - 8月11日18:00，所有班次同理。'
         }
       ]
     },
@@ -489,7 +493,7 @@ const attendanceSearchAliases = {
   '假期补': ['缺卡/迟到可以用假期补吗'],
   '调休补': ['缺卡/迟到可以用假期补吗'],
   '抵扣': ['半天调休假能抵扣迟到吗', '缺卡/迟到可以用假期补吗'],
-  '外勤': ['外勤需要打卡/拍照吗', '申请了外勤还显示缺卡', '申请外勤但临时不外出', '外勤能否后补', '提前回来打卡显示早退'],
+  '外勤': ['外勤需要打卡/拍照吗', '申请了外勤还显示缺卡', '申请外勤但临时不外出', '外勤能否后补', '提前回来打卡显示早退', '是否可以连续外勤'],
   '外勤拍照': ['外勤需要打卡/拍照吗'],
   '外勤打卡': ['外勤需要打卡/拍照吗', '申请了外勤还显示缺卡'],
   '外勤后补': ['外勤能否后补'],
@@ -612,6 +616,8 @@ const attendanceDocRaw = [
   { type: "text", content: `A5：同【迟到-Q3】，联系HR处理即可。建议外出申请为9-14点。`, bold: true, heading: false },
   { type: "text", content: `Q6：是否可以后补外勤？`, bold: true, heading: false },
   { type: "text", content: `A6：外勤（外出申请）必须提前申请，如果因为事发突然，请后补流程的时候补上相关佐证材料。`, bold: false, heading: false },
+  { type: "text", content: `Q7：是否可以连续外勤？`, bold: true, heading: false },
+  { type: "text", content: `A7：可以。比如你的打卡时间是9-18，那就选例如8月10日9:00 - 8月11日18:00，所有班次同理。`, bold: false, heading: false },
   { type: "text", content: `四、请假`, bold: true, heading: true },
   { type: "text", content: `Q1：我周末加班了，怎么没有调休假？`, bold: true, heading: false },
   { type: "text", content: `A1：调休假一般需要2-3天内才能结转，如果出现此情况可以稍等，相关休假流程可以后补（后补流程需备注原因）`, bold: true, heading: false },
