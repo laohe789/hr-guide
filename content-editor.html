@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HR指引 · 内容编辑器</title>
+<style>
+  :root{
+    --primary:#534AB7; --primary-soft:#E3DFFB; --bg:#F6F7FB; --card:#fff;
+    --line:#e7e7ef; --text:#2b2b35; --muted:#8a8a99; --green:#1f9d6b; --red:#d9534f;
+    --amber:#b8860b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden}
+  header{height:54px;background:var(--primary);color:#fff;display:flex;align-items:center;padding:0 18px;gap:14px;box-shadow:0 2px 8px rgba(0,0,0,.12);z-index:20;position:relative}
+  header h1{font-size:16px;font-weight:700;letter-spacing:.5px}
+  header .spacer{flex:1}
+  header button{background:rgba(255,255,255,.16);color:#fff;border:none;padding:7px 14px;border-radius:8px;font-size:13px;cursor:pointer;font-weight:600;transition:.15s}
+  header button:hover{background:rgba(255,255,255,.28)}
+  header button.primary{background:#fff;color:var(--primary)}
+  header button.primary:hover{background:#f0edff}
+  .layout{display:flex;height:calc(100vh - 54px)}
+  .sidebar{width:230px;background:#fff;border-right:1px solid var(--line);overflow-y:auto;padding:10px 0}
+  .sb-module{padding:11px 16px;font-weight:700;font-size:14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;color:var(--text)}
+  .sb-module:hover{background:var(--primary-soft)}
+  .sb-module.active{background:var(--primary);color:#fff}
+  .sb-module .count{font-size:11px;background:rgba(0,0,0,.08);padding:1px 8px;border-radius:10px}
+  .sb-module.active .count{background:rgba(255,255,255,.25)}
+  .sb-cat{padding:7px 16px 7px 30px;font-size:13px;color:#555;cursor:pointer;border-left:2px solid transparent}
+  .sb-cat:hover{background:#f4f3fb;color:var(--primary)}
+  .sb-cat.active{background:var(--primary-soft);border-left-color:var(--primary);color:var(--primary);font-weight:600}
+  .sb-cat .cc{float:right;font-size:11px;color:var(--muted)}
+  main{flex:1;display:flex;flex-direction:column;min-width:0}
+  .main-bar{height:46px;display:flex;align-items:center;gap:10px;padding:0 18px;border-bottom:1px solid var(--line);background:#fff}
+  .main-bar .title{font-size:15px;font-weight:700}
+  .main-bar .sub{font-size:12px;color:var(--muted)}
+  .main-bar .spacer{flex:1}
+  .main-bar button{background:var(--primary);color:#fff;border:none;padding:6px 13px;border-radius:7px;font-size:13px;cursor:pointer;font-weight:600}
+  .main-bar button.ghost{background:#fff;color:var(--primary);border:1px solid var(--primary)}
+  .list{flex:1;overflow-y:auto;padding:16px 18px;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;align-content:start}
+  .item{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 15px;cursor:pointer;transition:.15s;position:relative}
+  .item:hover{border-color:var(--primary);box-shadow:0 4px 14px rgba(83,74,183,.12);transform:translateY(-2px)}
+  .item .q{font-weight:700;font-size:14px;margin-bottom:6px;line-height:1.4;padding-right:54px}
+  .item .a{font-size:12.5px;color:#666;line-height:1.5;max-height:62px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+  .item .acts{position:absolute;top:10px;right:10px;display:flex;gap:6px}
+  .item .acts button{border:none;background:#f0eefb;color:var(--primary);width:26px;height:26px;border-radius:7px;cursor:pointer;font-size:13px;line-height:1}
+  .item .acts button:hover{background:var(--primary);color:#fff}
+  .item .acts button.del{background:#fdeaea;color:var(--red)}
+  .item .acts button.del:hover{background:var(--red);color:#fff}
+  .item .tag{display:inline-block;font-size:10.5px;color:var(--primary);background:var(--primary-soft);padding:1px 8px;border-radius:9px;margin-top:8px}
+  .item .synced{display:inline-block;font-size:10.5px;color:var(--green);background:#e6f7ef;padding:1px 8px;border-radius:9px;margin-top:8px;margin-left:6px}
+  .item .unsynced{display:inline-block;font-size:10.5px;color:var(--amber);background:#fdf3e0;padding:1px 8px;border-radius:9px;margin-top:8px;margin-left:6px}
+  .empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:60px 0;font-size:14px}
+  /* modal */
+  .mask{position:fixed;inset:0;background:rgba(0,0,0,.42);display:none;align-items:center;justify-content:center;z-index:50}
+  .mask.show{display:flex}
+  .modal{background:#fff;width:680px;max-width:94vw;max-height:90vh;overflow-y:auto;border-radius:16px;padding:22px 24px;box-shadow:0 18px 50px rgba(0,0,0,.3)}
+  .modal h3{font-size:17px;margin-bottom:16px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:#444}
+  .field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:14px;font-family:inherit;color:var(--text)}
+  .field textarea{resize:vertical;min-height:120px;line-height:1.6}
+  .field .hint{font-size:11.5px;color:var(--muted);margin-top:4px}
+  .field .hint code{background:#f3f2fb;padding:1px 5px;border-radius:4px;color:var(--primary)}
+  .modal .row{display:flex;gap:10px}
+  .modal .row .field{flex:1}
+  .modal-acts{display:flex;gap:10px;justify-content:flex-end;margin-top:8px;border-top:1px solid var(--line);padding-top:16px}
+  .modal-acts button{border:none;padding:9px 18px;border-radius:9px;font-size:14px;cursor:pointer;font-weight:600}
+  .modal-acts .save{background:var(--primary);color:#fff}
+  .modal-acts .cancel{background:#eee;color:#555}
+  .modal-acts .danger{background:#fdeaea;color:var(--red);margin-right:auto}
+  /* preview panel */
+  .preview{width:340px;background:#fff;border-left:1px solid var(--line);overflow-y:auto;padding:16px}
+  .preview h4{font-size:13px;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px}
+  .pv-card{background:var(--primary-soft);border:1px solid #d9d3fb;border-radius:12px;padding:14px;margin-bottom:18px}
+  .pv-card .pv-q{font-weight:700;color:var(--primary);font-size:14px;margin-bottom:8px}
+  .pv-card .pv-a{font-size:13px;color:#444;line-height:1.7}
+  .pv-card .pv-a :where(span){display:inline}
+  .pv-note{font-size:12px;color:var(--muted);line-height:1.6;background:#faf9ff;border:1px dashed var(--line);border-radius:10px;padding:10px}
+  /* toast */
+  #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#2b2b35;color:#fff;padding:11px 20px;border-radius:10px;font-size:14px;opacity:0;transition:.25s;pointer-events:none;z-index:99}
+  #toast.show{opacity:1}
+  .import-tip{font-size:12px;color:var(--muted);padding:10px 18px;border-bottom:1px solid var(--line);background:#fffdf5}
+  .import-tip b{color:var(--amber)}
+</style>
+</head>
+<body>
+<header>
+  <h1>📚 HR指引 · 内容编辑器</h1>
+  <span class="spacer"></span>
+  <button id="btn-open" onclick="openDataFile()">打开 data.js</button>
+  <button id="btn-import" onclick="importJson()">导入JSON</button>
+  <button id="btn-export" onclick="exportJson()">导出JSON</button>
+  <button class="primary" id="btn-save" onclick="saveData()">保存并写回 data.js</button>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <section class="main">
+    <div class="main-bar">
+      <div>
+        <div class="title" id="main-title">—</div>
+        <div class="sub" id="main-sub"></div>
+      </div>
+      <span class="spacer"></span>
+      <button class="ghost" id="btn-add" onclick="addItem()">＋ 新增条目</button>
+    </div>
+    <div class="list" id="list"></div>
+  </section>
+  <aside class="preview" id="preview">
+    <h4>实时预览</h4>
+    <div id="pv-body"><div class="pv-note">选中左侧任意条目即可在此预览卡片效果。</div></div>
+  </aside>
+</div>
+
+<!-- edit modal -->
+<div class="mask" id="mask">
+  <div class="modal">
+    <h3 id="modal-title">编辑条目</h3>
+    <div class="row">
+      <div class="field" id="f-cat-wrap">
+        <label>所属分类</label>
+        <select id="f-cat"></select>
+      </div>
+    </div>
+    <div class="field">
+      <label id="lbl-q">问题（关键词）</label>
+      <input id="f-q" type="text" placeholder="例如：是否可以连续外勤">
+      <div class="hint" id="hint-q">用于卡片标题与小助手搜索匹配。建议简短、可检索。</div>
+    </div>
+    <div class="field">
+      <label id="lbl-a">答案内容</label>
+      <textarea id="f-a" placeholder="支持 HTML，例如：可以。比如你的打卡时间是9-18，那就选<code>8月10日9:00-8月11日18:00</code>"></textarea>
+      <div class="hint">答案支持 HTML 标签（如 <code>&lt;span class="att-warn"&gt;必须提前申请&lt;/span&gt;</code> 高亮提醒）。纯文本也可直接写。</div>
+    </div>
+    <div class="modal-acts">
+      <button class="danger" id="btn-del" onclick="deleteItem()">删除此条</button>
+      <button class="cancel" onclick="closeModal()">取消</button>
+      <button class="save" onclick="saveItem()">保存</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="file-input" accept=".js,.json" style="display:none">
+<div id="toast"></div>
+
+<!-- 加载数据（经典脚本，顶层 const 跨脚本可见） -->
+<script src="data.js"></script>
+<script>
+"use strict";
+
+/* ============ 模块配置 ============
+   struct:
+     'cat-items' -> 变量 = { categories:[{key,label,items:[{keyword,detail}]}] }，编辑时联动 docRaw
+     'faq'       -> 变量 = [{ category, items:[{q,a}] }]
+*/
+const MODULES = [
+  { key:'attendance', varName:'attendanceData', label:'考勤指引', struct:'cat-items', docRaw:'attendanceDocRaw' },
+  { key:'leave',      varName:'leaveData',      label:'请假指南', struct:'cat-items', docRaw:'leaveDocRaw' },
+  { key:'insurance',  varName:'insuranceData',  label:'商业保险', struct:'cat-items', docRaw:'insuranceDocRaw' },
+  { key:'it_guide',   varName:'itData',         label:'IT办公指引', struct:'cat-items', docRaw:null },
+  { key:'faq',        varName:'faqData',        label:'常见问题', struct:'faq', docRaw:null },
+];
+
+// 受本编辑器管理的变量（写回时只替换这些，其余原样保留）
+const MANAGED = ['attendanceData','leaveData','insuranceData','itData','faqData',
+                 'attendanceDocRaw','leaveDocRaw','insuranceDocRaw','attendanceSearchAliases'];
+
+// 运行态
+let DATA = {};        // 深拷贝自全局，用户编辑对象
+let curModule = null; // MODULES 元素
+let curCatKey = null; // 当前分类 key/名称
+let editing = null;   // {catKey, index} 正在编辑的条目定位
+
+// ---------- 工具 ----------
+function deepCopy(o){ return JSON.parse(JSON.stringify(o)); }
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2200); }
+
+// 取某模块所有"分类" [{key,label}] 与 条目所属分类的判定
+function getCategories(mod){
+  if(mod.struct==='cat-items') return DATA[mod.varName].categories.map(c=>({key:c.key,label:c.label}));
+  if(mod.struct==='faq')       return DATA[mod.varName].map(c=>({key:c.category,label:c.category}));
+  return [];
+}
+function getItems(mod, catKey){
+  if(mod.struct==='cat-items'){
+    const c = DATA[mod.varName].categories.find(x=>x.key===catKey);
+    return c ? c.items : [];
+  }
+  if(mod.struct==='faq'){
+    const c = DATA[mod.varName].find(x=>x.category===catKey);
+    return c ? c.items : [];
+  }
+  return [];
+}
+function getQuestion(mod, item){ return mod.struct==='faq' ? item.q : item.keyword; }
+function getAnswer(mod, item){ return mod.struct==='faq' ? item.a : item.detail; }
+function setQuestion(mod, item, v){ if(mod.struct==='faq') item.q=v; else item.keyword=v; }
+function setAnswer(mod, item, v){ if(mod.struct==='faq') item.a=v; else item.detail=v; }
+
+// docRaw 同步状态（判断某分类在详情原文有无对应章节）
+function docRawHasSection(mod, catLabel){
+  if(!mod.docRaw) return false;
+  const raw = DATA[mod.docRaw]; if(!raw) return false;
+  for(const n of raw){
+    if(n.type==='text' && n.heading && matchSection(n.content, catLabel)) return true;
+  }
+  return false;
+}
+function matchSection(headingText, catLabel){
+  const t = headingText.replace(/^[一二三四五六七八九十]+[、.．\s]*/, '').trim();
+  return t===catLabel || t.includes(catLabel) || catLabel.includes(t);
+}
+
+// ---------- 序列化（写回 data.js）----------
+function serializeValue(v, indent){
+  const pad = '  '.repeat(indent);
+  const pad1 = '  '.repeat(indent+1);
+  if(typeof v === 'string'){
+    if(v.includes('`') || v.includes('${')) return '`' + v.replace(/\\/g,'\\\\').replace(/`/g,'\\`').replace(/\$\{/g,'\\${') + '`';
+    return '`' + v + '`';
+  }
+  if(typeof v === 'number') return String(v);
+  if(typeof v === 'boolean') return String(v);
+  if(v === null) return 'null';
+  if(Array.isArray(v)){
+    if(v.length===0) return '[]';
+    return '[\n' + v.map(it=>pad1 + serializeValue(it, indent+1)).join(',\n') + '\n' + pad + ']';
+  }
+  if(typeof v === 'object'){
+    const keys = Object.keys(v);
+    if(keys.length===0) return '{}';
+    return '{\n' + keys.map(k=>pad1 + JSON.stringify(k) + ': ' + serializeValue(v[k], indent+1)).join(',\n') + '\n' + pad + '}';
+  }
+  return '`' + String(v) + '`';
+}
+
+// 定位变量声明块 [start,end)
+function locateVarBlock(src, varName){
+  const re = new RegExp('const\\s+' + varName.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + '\\s*=\\s*');
+  const m = re.exec(src);
+  if(!m) return null;
+  const i = m.index;
+  let j = m.index + m[0].length;
+  const open = src[j];
+  const close = open==='{' ? '}' : ']';
+  let depth=0, k=j;
+  for(; k<src.length; k++){
+    const ch = src[k];
+    if(ch===open) depth++;
+    else if(ch===close){ depth--; if(depth===0){ k++; break; } }
+    else if(ch==='/' && src[k+1]==='*'){ // 跳过块注释（极少，保险）
+      let p=src.indexOf('*/',k+2); k = p<0?src.length:p+1; continue;
+    }
+  }
+  // 跳过末尾空白与分号
+  while(k<src.length && (src[k]===' '||src[k]==='\t'||src[k]===';'||src[k]==='\n'||src[k]==='\r')) k++;
+  return {start:i, end:k};
+}
+
+function buildDataJs(){
+  let src = window.__DATAJS_TEXT__;
+  if(!src){ toast('未加载原始 data.js 文本，请先「打开 data.js」'); return null; }
+  for(const v of MANAGED){
+    if(!(v in DATA)) continue;
+    const blk = locateVarBlock(src, v);
+    if(!blk){ console.warn('未找到', v, '声明块'); continue; }
+    const newBlock = 'const ' + v + ' = ' + serializeValue(DATA[v], 0) + ';\n';
+    src = src.slice(0, blk.start) + newBlock + src.slice(blk.end);
+  }
+  return src;
+}
+
+// ---------- 渲染 ----------
+function renderSidebar(){
+  const sb = document.getElementById('sidebar');
+  sb.innerHTML = '';
+  for(const mod of MODULES){
+    const total = countItems(mod);
+    const mEl = document.createElement('div');
+    mEl.className = 'sb-module' + (curModule===mod?' active':'');
+    mEl.innerHTML = '<span>'+esc(mod.label)+'</span><span class="count">'+total+'</span>';
+    mEl.onclick = ()=>selectModule(mod);
+    sb.appendChild(mEl);
+    if(curModule===mod){
+      for(const c of getCategories(mod)){
+        const ce = document.createElement('div');
+        ce.className = 'sb-cat' + (curCatKey===c.key?' active':'');
+        const cnt = getItems(mod, c.key).length;
+        ce.innerHTML = esc(c.label) + '<span class="cc">'+cnt+'</span>';
+        ce.onclick = (e)=>{ e.stopPropagation(); selectCat(c.key); };
+        sb.appendChild(ce);
+      }
+    }
+  }
+}
+function countItems(mod){
+  let n=0;
+  for(const c of getCategories(mod)) n += getItems(mod, c.key).length;
+  return n;
+}
+function selectModule(mod){
+  curModule = mod;
+  const cats = getCategories(mod);
+  curCatKey = cats.length ? cats[0].key : null;
+  renderSidebar(); renderList(); renderMainBar();
+}
+function selectCat(catKey){
+  curCatKey = catKey;
+  renderSidebar(); renderList(); renderMainBar();
+}
+function renderMainBar(){
+  document.getElementById('main-title').textContent = curModule ? curModule.label : '—';
+  const cats = getCategories(curModule||{struct:null});
+  const cat = cats.find(c=>c.key===curCatKey);
+  document.getElementById('main-sub').textContent = cat ? ('当前分类：'+cat.label+'（'+getItems(curModule,curCatKey).length+' 条）') : '';
+}
+function renderList(){
+  const list = document.getElementById('list');
+  list.innerHTML = '';
+  if(!curModule){ list.innerHTML='<div class="empty">请选择左侧模块</div>'; return; }
+  const items = getItems(curModule, curCatKey);
+  if(!items.length){ list.innerHTML='<div class="empty">该分类下暂无条目，点击右上角「＋ 新增条目」添加</div>'; return; }
+  items.forEach((it, idx)=>{
+    const q = getQuestion(curModule, it);
+    const a = getAnswer(curModule, it);
+    const el = document.createElement('div');
+    el.className = 'item';
+    let syncTag = '';
+    if(curModule.docRaw){
+      syncTag = docRawHasSection(curModule, catLabelOf(curModule, curCatKey))
+        ? '<span class="synced">详情已同步</span>' : '<span class="unsynced">详情需同步</span>';
+    }
+    el.innerHTML =
+      '<div class="acts">'+
+        '<button title="编辑" onclick="openEditor(\''+curCatKey+'\','+idx+')">✎</button>'+
+        '<button class="del" title="删除" onclick="askDelete(\''+curCatKey+'\','+idx+')">🗑</button>'+
+      '</div>'+
+      '<div class="q">'+esc(q)+'</div>'+
+      '<div class="a">'+esc(a)+'</div>'+
+      (curModule.struct==='cat-items' ? '<span class="tag">'+esc(catLabelOf(curModule,curCatKey))+'</span>'+syncTag : '');
+    el.onclick = ()=>openEditor(curCatKey, idx);
+    list.appendChild(el);
+  });
+}
+function catLabelOf(mod, catKey){
+  const c = getCategories(mod).find(x=>x.key===catKey);
+  return c ? c.label : catKey;
+}
+
+// ---------- 编辑 / 新增 / 删除 ----------
+function openEditor(catKey, idx){
+  editing = {catKey, idx};
+  const item = getItems(curModule, catKey)[idx];
+  document.getElementById('modal-title').textContent = '编辑条目';
+  fillCatSelect(catKey);
+  document.getElementById('f-q').value = getQuestion(curModule, item);
+  document.getElementById('f-a').value = getAnswer(curModule, item);
+  setupLabels();
+  document.getElementById('btn-del').style.display = '';
+  document.getElementById('mask').classList.add('show');
+  renderPreview(getQuestion(curModule,item), getAnswer(curModule,item));
+}
+function addItem(){
+  if(!curModule) return;
+  editing = {catKey:curCatKey, idx:-1};
+  document.getElementById('modal-title').textContent = '新增条目';
+  fillCatSelect(curCatKey);
+  document.getElementById('f-q').value = '';
+  document.getElementById('f-a').value = '';
+  setupLabels();
+  document.getElementById('btn-del').style.display = 'none';
+  document.getElementById('mask').classList.add('show');
+  renderPreview('', '');
+}
+function fillCatSelect(catKey){
+  const sel = document.getElementById('f-cat');
+  sel.innerHTML = '';
+  for(const c of getCategories(curModule)){
+    const o = document.createElement('option');
+    o.value = c.key; o.textContent = c.label;
+    if(c.key===catKey) o.selected = true;
+    sel.appendChild(o);
+  }
+}
+function setupLabels(){
+  if(curModule.struct==='faq'){
+    document.getElementById('lbl-q').textContent = '问题';
+    document.getElementById('lbl-a').textContent = '答案';
+    document.getElementById('hint-q').textContent = '常见问题中的提问文案。';
+    document.getElementById('f-cat-wrap').style.display = '';
+  } else {
+    document.getElementById('lbl-q').textContent = '问题（关键词）';
+    document.getElementById('lbl-a').textContent = '答案内容';
+    document.getElementById('hint-q').textContent = '用于卡片标题与小助手搜索匹配。建议简短、可检索。';
+    document.getElementById('f-cat-wrap').style.display = '';
+  }
+}
+function saveItem(){
+  const newCat = document.getElementById('f-cat').value;
+  const q = document.getElementById('f-q').value.trim();
+  const a = document.getElementById('f-a').value;
+  if(!q){ toast('问题不能为空'); return; }
+  const items = getItems(curModule, editing.catKey);
+  if(editing.idx === -1){
+    // 新增：目标分类 newCat
+    const newItem = curModule.struct==='faq' ? {q, a} : {keyword:q, detail:a};
+    pushItemTo(curModule, newCat, newItem);
+    // 同步 docRaw
+    if(curModule.docRaw) syncDocRawAdd(curModule, newCat, q, a);
+    // 同步搜索别名
+    if(curModule.varName==='attendanceData') aliasAdd(catLabelOf(curModule,newCat), q);
+  } else {
+    const oldItem = items[editing.idx];
+    const oldQ = getQuestion(curModule, oldItem);
+    // 若换了分类：从旧分类移除，加到新分类
+    if(newCat !== editing.catKey){
+      items.splice(editing.idx, 1);
+      pushItemTo(curModule, newCat, curModule.struct==='faq'?{q,a}:{keyword:q,detail:a});
+      if(curModule.docRaw){ syncDocRawDelete(curModule, editing.catKey, oldQ); syncDocRawAdd(curModule, newCat, q, a); }
+      if(curModule.varName==='attendanceData'){ aliasRemove(catLabelOf(curModule,editing.catKey), oldQ); aliasAdd(catLabelOf(curModule,newCat), q); }
+    } else {
+      setQuestion(curModule, oldItem, q);
+      setAnswer(curModule, oldItem, a);
+      if(curModule.docRaw) syncDocRawUpdate(curModule, newCat, oldQ, q, a);
+      if(curModule.varName==='attendanceData' && q!==oldQ){ aliasRemove(catLabelOf(curModule,newCat), oldQ); aliasAdd(catLabelOf(curModule,newCat), q); }
+    }
+  }
+  closeModal();
+  // 若新增/换到了当前未选中的分类，自动切过去
+  if(newCat!==curCatKey){ curCatKey = newCat; }
+  renderSidebar(); renderList(); renderMainBar();
+  if(!window.__DATAJS_TEXT__) toast('已编辑（尚未写回文件，记得点「保存并写回」）');
+  else toast('已编辑，点「保存并写回 data.js」生效');
+}
+function pushItemTo(mod, catKey, item){
+  if(mod.struct==='cat-items'){
+    const c = DATA[mod.varName].categories.find(x=>x.key===catKey);
+    if(c) c.items.push(item);
+  } else if(mod.struct==='faq'){
+    const c = DATA[mod.varName].find(x=>x.category===catKey);
+    if(c) c.items.push(item);
+  }
+}
+function askDelete(catKey, idx){
+  const it = getItems(curModule, catKey)[idx];
+  const q = getQuestion(curModule, it);
+  if(!confirm('确定删除「'+q+'」？此操作不可撤销（保存前可刷新页面放弃）。')) return;
+  deleteItemAt(catKey, idx);
+}
+function deleteItem(){
+  if(!editing || editing.idx<0) return;
+  const item = getItems(curModule, editing.catKey)[editing.idx];
+  const oldQ = getQuestion(curModule, item);
+  if(!confirm('确定删除「'+oldQ+'」？')) { closeModal(); return; }
+  deleteItemAt(editing.catKey, editing.idx);
+  if(curModule.docRaw) syncDocRawDelete(curModule, editing.catKey, oldQ);
+  if(curModule.varName==='attendanceData') aliasRemove(catLabelOf(curModule,editing.catKey), oldQ);
+  closeModal();
+  renderSidebar(); renderList(); renderMainBar();
+  toast('已删除');
+}
+function deleteItemAt(catKey, idx){
+  const items = getItems(curModule, catKey);
+  items.splice(idx,1);
+}
+function closeModal(){ document.getElementById('mask').classList.remove('show'); editing=null; }
+
+// ---------- docRaw 同步 ----------
+function docRawSectionBounds(raw, catLabel){
+  // 返回 [startIdx, endIdx) 该章节在 raw 数组中的范围（含章节标题，至下一 heading 或结尾）
+  let start=-1, end=raw.length;
+  for(let i=0;i<raw.length;i++){
+    const n=raw[i];
+    if(n.type==='text' && n.heading){
+      if(start===-1 && matchSection(n.content, catLabel)) start=i;
+      else if(start!==-1){ end=i; break; }
+    }
+  }
+  return start===-1 ? null : {start, end};
+}
+function findQA(raw, sec, oldQ){
+  // 在章节 [sec.start, sec.end) 内找 Q 节点（文本以 Q<num>：开头）其去前缀文本 === oldQ 或 includes
+  for(let i=sec.start+1;i<sec.end;i++){
+    const n=raw[i];
+    if(n.type==='text' && /^Q\d+[：:]/.test(n.content)){
+      const qText = n.content.replace(/^Q\d+[：:]/,'').trim();
+      if(qText===oldQ || qText.includes(oldQ) || oldQ.includes(qText)){
+        return i;
+      }
+    }
+  }
+  return -1;
+}
+function syncDocRawUpdate(mod, catKey, oldQ, newQ, newA){
+  const raw = DATA[mod.docRaw]; if(!raw) return;
+  const label = catLabelOf(mod, catKey);
+  const sec = docRawSectionBounds(raw, label);
+  if(!sec) return;
+  const qi = findQA(raw, sec, oldQ);
+  if(qi<0) return;
+  // 找到该问答的 A 部分结束位置（到下一个 Q 或章节结束）
+  let ai = qi+1;
+  // 跳过 A 编号节点
+  let aEnd = sec.end;
+  for(let i=qi+1;i<sec.end;i++){
+    const n=raw[i];
+    if(n.type==='text' && /^Q\d+[：:]/.test(n.content)){ aEnd=i; break; }
+  }
+  const qNum = (raw[qi].content.match(/^Q(\d+)/)||[,''])[1];
+  // 重建：Q 节点 + A 编号节点 + 答案文本节点
+  const newNodes = [
+    {type:'text', content:'Q'+qNum+'：'+newQ, bold:true, heading:false},
+    {type:'text', content:'A'+qNum+'：', bold:true, heading:false},
+    {type:'text', content:newA, bold:false, heading:false},
+  ];
+  raw.splice(qi, aEnd-qi, ...newNodes);
+}
+function syncDocRawAdd(mod, catKey, q, a){
+  const raw = DATA[mod.docRaw]; if(!raw) return;
+  const label = catLabelOf(mod, catKey);
+  const sec = docRawSectionBounds(raw, label);
+  if(!sec) return;
+  // 计算该章节当前最大 Q 编号
+  let maxN=0;
+  for(let i=sec.start+1;i<sec.end;i++){
+    const n=raw[i];
+    if(n.type==='text' && /^Q(\d+)[：:]/.test(n.content)){ maxN=Math.max(maxN, parseInt(n.content.match(/^Q(\d+)/)[1],10)); }
+  }
+  const nN = maxN+1;
+  const newNodes = [
+    {type:'text', content:'Q'+nN+'：'+q, bold:true, heading:false},
+    {type:'text', content:'A'+nN+'：', bold:true, heading:false},
+    {type:'text', content:a, bold:false, heading:false},
+  ];
+  // 插入到章节末尾（sec.end 之前）
+  raw.splice(sec.end, 0, ...newNodes);
+  // 章节 end 后移
+  sec.end += newNodes.length;
+}
+function syncDocRawDelete(mod, catKey, oldQ){
+  const raw = DATA[mod.docRaw]; if(!raw) return;
+  const label = catLabelOf(mod, catKey);
+  const sec = docRawSectionBounds(raw, label);
+  if(!sec) return;
+  const qi = findQA(raw, sec, oldQ);
+  if(qi<0) return;
+  let aEnd = sec.end;
+  for(let i=qi+1;i<sec.end;i++){
+    const n=raw[i];
+    if(n.type==='text' && /^Q\d+[：:]/.test(n.content)){ aEnd=i; break; }
+  }
+  raw.splice(qi, aEnd-qi);
+}
+
+// 搜索别名同步：新增/删除考勤问答后，保证考勤搜索聚合仍能列出该条目
+function aliasAdd(label, kw){
+  if(!DATA.attendanceSearchAliases) return;
+  if(!DATA.attendanceSearchAliases[label]) DATA.attendanceSearchAliases[label] = [];
+  if(!DATA.attendanceSearchAliases[label].includes(kw)) DATA.attendanceSearchAliases[label].push(kw);
+}
+function aliasRemove(label, kw){
+  if(!DATA.attendanceSearchAliases || !DATA.attendanceSearchAliases[label]) return;
+  DATA.attendanceSearchAliases[label] = DATA.attendanceSearchAliases[label].filter(k=>k!==kw);
+}
+
+// ---------- 预览 ----------
+function renderPreview(q, a){
+  const body = document.getElementById('pv-body');
+  const isFaq = curModule && curModule.struct==='faq';
+  body.innerHTML =
+    '<div class="pv-card">'+
+      '<div class="pv-q">'+esc(q||'（问题预览）')+'</div>'+
+      '<div class="pv-a">'+(a? a : '<span style="color:#bbb">（答案预览）</span>')+'</div>'+
+    '</div>'+
+    '<div class="pv-note">'+
+      (isFaq ? '常见问题（FAQ）条目：显示在「常见问题」标签页，并可在「指南汇总」高频区出现。' :
+        '卡片条目：显示在模块卡片视图，并自动进入小助手搜索/联想索引。'+
+        (curModule && curModule.docRaw ? '<br>保存写回时会同步更新「详情原文」（需该分类在原文中有对应章节）。' : ''))+
+    '</div>';
+}
+
+// ---------- 文件 / 保存 / 导入导出 ----------
+let fileHandle = null;
+async function openDataFile(){
+  try{
+    const [h] = await window.showOpenFilePicker({multiple:false, types:[{description:'JS', accept:{'text/javascript':['.js']}}]});
+    fileHandle = h;
+    const text = await (await h.getFile()).text();
+    window.__DATAJS_TEXT__ = text;
+    loadFromText(text);
+    toast('已加载 data.js，可开始编辑');
+  }catch(e){
+    if(e.name!=='AbortError') toast('打开失败：'+e.message);
+  }
+}
+function loadFromText(text){
+  // 从文本解析出被管理变量的内容（用 vm 风格：构造沙箱执行后取值）
+  const vm = (typeof window !== 'undefined');
+  try{
+    // 用 Function 构造器在隔离作用域执行，提取变量
+    const names = MANAGED;
+    const fn = new Function(text + '\nreturn {' + names.map(n=>n+':typeof '+n+'!=="undefined"?'+n+':undefined').join(',') + '};');
+    const got = fn();
+    for(const n of names){ if(got[n]!==undefined) DATA[n]=deepCopy(got[n]); }
+    selectModule(MODULES[0]);
+    document.getElementById('btn-save').textContent = '保存并写回 data.js';
+  }catch(e){ toast('解析 data.js 失败：'+e.message); }
+}
+async function saveData(){
+  const newText = buildDataJs();
+  if(!newText) return;
+  try{
+    if(fileHandle){
+      const w = await fileHandle.createWritable();
+      await w.write(newText); await w.close();
+      window.__DATAJS_TEXT__ = newText;
+      toast('✅ 已写回 data.js');
+    } else if(window.showSaveFilePicker){
+      const h = await window.showSaveFilePicker({suggestedName:'data.js'});
+      const w = await h.createWritable(); await w.write(newText); await w.close();
+      window.__DATAJS_TEXT__ = newText;
+      toast('✅ 已写回 data.js（下次可直接保存）');
+    } else {
+      download('data.js', newText);
+      toast('已下载 data.js，请手动覆盖原文件');
+    }
+  }catch(e){
+    if(e.name!=='AbortError'){ download('data.js', newText); toast('写回失败，已改为下载：'+e.message); }
+  }
+}
+function download(name, text){
+  const blob = new Blob([text], {type:'text/javascript'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  URL.revokeObjectURL(a.href);
+}
+function exportJson(){
+  // 导出被管理内容为 JSON（便于备份/发给他人）
+  const out = { _note:'HR指引内容编辑器导出，可用「导入JSON」恢复被管理的数据', modules:{} };
+  for(const mod of MODULES){ out.modules[mod.key] = DATA[mod.varName]; }
+  if(DATA.attendanceSearchAliases) out.attendanceSearchAliases = DATA.attendanceSearchAliases;
+  download('hr-content-' + new Date().toISOString().slice(0,10) + '.json', JSON.stringify(out, null, 2));
+  toast('已导出 JSON 备份');
+}
+function importJson(){
+  const inp = document.getElementById('file-input');
+  inp.value = '';
+  inp.onchange = ()=>{
+    const f = inp.files[0]; if(!f) return;
+    const r = new FileReader();
+    r.onload = ()=>{
+      try{
+        const obj = JSON.parse(r.result);
+        if(obj.modules){
+          for(const mod of MODULES){ if(obj.modules[mod.key]) DATA[mod.varName]=deepCopy(obj.modules[mod.key]); }
+        }
+        if(obj.attendanceSearchAliases) DATA.attendanceSearchAliases = deepCopy(obj.attendanceSearchAliases);
+        renderSidebar(); renderList(); renderMainBar();
+        toast('已导入 JSON（未写回，记得保存）');
+      }catch(e){ toast('导入失败：'+e.message); }
+    };
+    r.readAsText(f);
+  };
+  inp.click();
+}
+
+// ---------- 初始化 ----------
+window.addEventListener('DOMContentLoaded', ()=>{
+  // 若通过 <script src=data.js> 已加载全局变量，则直接初始化（无需手动打开）
+  let loaded=false;
+  for(const mod of MODULES){
+    const g = (typeof window[mod.varName]!=='undefined') ? window[mod.varName] : (typeof eval(mod.varName)!=='undefined'? eval(mod.varName): undefined);
+  }
+  // 直接尝试读取全局（顶层 const 非 window 属性，需用 eval 读全局词法绑定）
+  try{
+    for(const n of MANAGED){
+      let val;
+      if(typeof window[n] !== 'undefined') val = window[n];
+      else { try { val = eval(n); } catch(e){ val = undefined; } }
+      if(val !== undefined){ DATA[n] = deepCopy(val); loaded=true; }
+    }
+  }catch(e){}
+  if(loaded){
+    selectModule(MODULES[0]);
+    document.getElementById('btn-save').textContent = '保存并写回 data.js（需先「打开 data.js」）';
+    toast('已自动加载 data.js 全局数据。点「打开 data.js」绑定文件后可一键写回');
+  } else {
+    document.getElementById('main-title').textContent='请先打开 data.js';
+    document.getElementById('list').innerHTML='<div class="empty">点击右上角「打开 data.js」选择项目里的 data.js 文件，即可开始编辑。</div>';
+  }
+});
+</script>
+</body>
+</html>
