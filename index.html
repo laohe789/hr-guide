@@ -2760,7 +2760,8 @@ function renderAttendanceClassic(container) {
     if (item.type === 'image') {
       html += '<div class="att-doc-item" style="margin:12px 0;text-align:center;"><img src="' + item.src + '" style="max-width:100%;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,0.1);" alt=""></div>';
     } else {
-      let content = esc(item.content);
+      // docRaw 内容是受信内部数据，含 HTML 标签（<br>/<span> 等），不转义以正确渲染
+      let content = item.content || '';
       if (item.bold || item.heading) {
         content = '<b>' + content + '</b>';
       }
@@ -2835,7 +2836,8 @@ function renderLeaveClassic(container) {
     if (item.type === 'image') {
       html += '<div style="margin:12px 0;text-align:center;"><img src="' + item.src + '" style="max-width:100%;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,0.1);" alt=""></div>';
     } else {
-      let content = esc(item.content);
+      // docRaw 受信内容，不转义 HTML
+      let content = item.content || '';
       if (item.bold || item.heading) {
         content = '<b>' + content + '</b>';
       }
@@ -2891,11 +2893,11 @@ function renderItClassic(container) {
   let html = '<div class="att-doc">';
   for (const b of itDocRaw) {
     if (b.heading) {
-      html += '<div class="att-doc-heading">' + esc(b.content) + '</div>';
+      html += '<div class="att-doc-heading">' + (b.content || '') + '</div>';
     } else if (b.type === 'copy') {
       html += '<span class="pwd-copy" data-copy="' + esc(b.value) + '">••••••••  [点击复制]</span>';
     } else {
-      html += '<div class="att-doc-item">' + esc(b.content) + '</div>';
+      html += '<div class="att-doc-item">' + (b.content || '') + '</div>';
     }
   }
   html += '</div>';
@@ -3037,9 +3039,9 @@ function renderInsuranceClassic(container) {
         + (b.caption ? '<div style="font-size:12px;color:#888;margin-top:6px;">' + esc(b.caption) + '</div>' : '')
         + '</div>';
     } else if (b.heading || b.type === 'heading') {
-      html += '<div class="att-doc-heading">' + esc(b.content) + '</div>';
+      html += '<div class="att-doc-heading">' + (b.content || '') + '</div>';
     } else {
-      html += '<div class="att-doc-item">' + esc(b.content) + '</div>';
+      html += '<div class="att-doc-item">' + (b.content || '') + '</div>';
     }
   }
   html += '</div>';

@@ -62,6 +62,10 @@
   .field textarea{resize:vertical;min-height:120px;line-height:1.6}
   .field .hint{font-size:11.5px;color:var(--muted);margin-top:4px}
   .field .hint code{background:#f3f2fb;padding:1px 5px;border-radius:4px;color:var(--primary)}
+  /* HTML 快捷工具栏按钮 */
+  .htool-btn{display:inline-flex;align-items:center;gap:3px;padding:4px 10px;border:1px solid #d8d9e3;background:#fff;border-radius:6px;font-size:12px;color:#555;cursor:pointer;transition:all .15s;white-space:nowrap;line-height:1.4}
+  .htool-btn:hover{background:#eef0fa;border-color:#b8bce0;color:#333;box-shadow:0 1px 4px rgba(83,74,183,.12)}
+  .htool-btn:active{transform:scale(.96)}
   .modal .row{display:flex;gap:10px}
   .modal .row .field{flex:1}
   .modal-acts{display:flex;gap:10px;justify-content:flex-end;margin-top:8px;border-top:1px solid var(--line);padding-top:16px}
@@ -130,6 +134,18 @@
     </div>
     <div class="field">
       <label id="lbl-a">答案内容</label>
+      <!-- HTML 快捷工具栏 -->
+      <div id="html-toolbar" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;padding:8px;background:#f7f8fc;border:1px solid #e2e4f0;border-radius:8px;">
+        <span style="font-size:11px;color:#888;width:100%;margin-bottom:2px;">📝 常用格式（点击插入到光标位置）：</span>
+        <button type="button" class="htool-btn" data-insert="<br>" title="换行">↵ 换行</button>
+        <button type="button" class="htool-btn" data-insert="<br><br>" title="段落间隔（双换行）">↵↵ 段落</button>
+        <button type="button" class="htool-btn" data-insert="<b>$SEL$</b>" title="加粗文字，选中文字后点击或手动替换 $SEL$"><b>B</b> 加粗</button>
+        <button type="button" class="htool-btn" data-insert='<span class="att-warn">$SEL$</span>' title="警告文字（橙红色高亮提醒）"><span style="color:#e05a38;font-weight:700;">⚠ 警告</span></button>
+        <button type="button" class="htool-btn" data-insert='<span class="att-hl">$SEL$</span>' title="高亮文字（紫色强调）"><span style="color:#534AB7;font-weight:700;">✦ 高亮</span></button>
+        <button type="button" class="htool-btn" data-insert="<code>$SEL$</code>" title="代码/等宽字体（如时间、编号）"><code>&lt;/&gt;</code> 代码</button>
+        <button type="button" class="htool-btn" data-insert="<br>解决方法：<br>" title="解决方法分段标题"><span style="font-size:12px;">📋 解决方法</span></button>
+        <button type="button" class="htool-btn" data-insert="<br>$N$. " title="有序列表项（自动递增编号）"><span style="font-size:12px;">1. 列表</span></button>
+      </div>
       <textarea id="f-a" placeholder="支持 HTML，例如：可以。比如你的打卡时间是9-18，那就选<code>8月10日9:00-8月11日18:00</code>"></textarea>
       <div class="hint">答案支持 HTML 标签（如 <code>&lt;span class="att-warn"&gt;必须提前申请&lt;/span&gt;</code> 高亮提醒）。纯文本也可直接写。</div>
     </div>
@@ -467,6 +483,29 @@ function deleteItemAt(catKey, idx){
 }
 function closeModal(){ document.getElementById('mask').classList.remove('show'); editing=null; }
 
+// ---------- HTML 快捷工具栏：插入到光标位置 ----------
+function insertHtmlSnippet(snippet){
+  const ta = document.getElementById('f-a');
+  if(!ta) return;
+  const start = ta.selectionStart, end = ta.selectionEnd;
+  const selected = ta.value.slice(start, end);
+  const selIdx = snippet.indexOf('$SEL$');
+  let insert, caret;
+  if(selIdx !== -1){
+    const before = snippet.slice(0, selIdx);
+    const after = snippet.slice(selIdx + 5); // '$SEL$' 长度
+    insert = before + selected + after;
+    caret = start + before.length + selected.length;
+  } else {
+    insert = snippet;
+    caret = start + snippet.length;
+  }
+  ta.value = ta.value.slice(0, start) + insert + ta.value.slice(end);
+  ta.focus();
+  ta.setSelectionRange(caret, caret);
+  renderPreview(document.getElementById('f-q').value, ta.value);
+}
+
 // ---------- docRaw 同步 ----------
 function docRawSectionBounds(raw, catLabel){
   // 返回 [startIdx, endIdx) 该章节在 raw 数组中的范围（含章节标题，至下一 heading 或结尾）
@@ -690,6 +729,10 @@ window.addEventListener('DOMContentLoaded', ()=>{
     document.getElementById('main-title').textContent='请先打开 data.js';
     document.getElementById('list').innerHTML='<div class="empty">点击右上角「打开 data.js」选择项目里的 data.js 文件，即可开始编辑。</div>';
   }
+  // HTML 快捷工具栏
+  document.querySelectorAll('#html-toolbar .htool-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=> insertHtmlSnippet(btn.getAttribute('data-insert')));
+  });
 });
 </script>
 </body>
