@@ -2832,6 +2832,15 @@ function renderLeaveClassic(container) {
     + '以下内容为智能助手根据公司制度文件整理，仅供参考。如与正式制度有出入，请以原文件为准。'
     + '<br><a href="https://kms.yuexiuproperty.cn/kms/multidoc/kms_multidoc_knowledge/kmsMultidocKnowledge.do?method=view&fdId=1828bc3ab434223146060cf47aa9fae8" target="_blank" class="leave-advisory-link">📄 查看休假管理细则原文</a>'
     + '</div>';
+  if (!leaveDocRaw || leaveDocRaw.length === 0) {
+    html += '<div style="margin:24px 0;padding:24px 20px;background:#f8f9ff;border-radius:12px;border:1px dashed #c7d2fe;text-align:center;">'
+      + '<div style="font-size:28px;margin-bottom:8px;">🔒</div>'
+      + '<div style="font-size:15px;font-weight:600;color:#534AB7;margin-bottom:6px;">详细制度内容已移除</div>'
+      + '<div style="font-size:13px;color:#888;line-height:1.6;">休假管理细则属于公司内部文件，不在公网展示。<br>请使用上方「卡片」视图浏览分类问答，或点击上方链接查看内部KMS原文。</div>'
+      + '</div>';
+    container.innerHTML = html;
+    return;
+  }
   for (const item of leaveDocRaw) {
     if (item.type === 'image') {
       html += '<div style="margin:12px 0;text-align:center;"><img src="' + item.src + '" style="max-width:100%;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,0.1);" alt=""></div>';
