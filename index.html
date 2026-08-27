@@ -4597,6 +4597,12 @@ function searchQAExactMatch(originalQ, kw, matchedIntent) {
   const sources = [];
   const intent = (matchedIntent || {}).intent || '';
 
+  // 清空上次命中的关键词元数据（用于「你可能还想搜」别名组推荐）
+  window.lastMatchedKeyword = null;
+  window.lastMatchedDetail = '';
+  window.lastMatchedCategory = '';
+  window.lastMatchedModule = '';
+
   // 提取用户输入中的关键实词（≥2字，过滤虚词，长词拆2字滑窗）
   const rawTerms = originalQ.replace(/的|吗|呢|呀|啊|怎么|什么|哪|如何|是否|要|不|没|能|可以|需要|应该|请问|还|了|是|有|我|这|那|个|到|在|为|和|或|但|如果|因为|所以/g, ' ')
     .split(/\s+/).filter(t => t.length >= 2);
@@ -4655,6 +4661,10 @@ function searchQAExactMatch(originalQ, kw, matchedIntent) {
         const preferredKeyword = attendanceSearchAliases[aliasKw][0];
         const preferred = sources.find(s => s.keyword === preferredKeyword);
         if (preferred) {
+          window.lastMatchedKeyword = preferred.keyword;
+          window.lastMatchedDetail = stripHtml(preferred.detail);
+          window.lastMatchedCategory = preferred.catLabel;
+          window.lastMatchedModule = preferred.moduleLabel;
           return `${preferred.keyword}\n\n${stripHtml(preferred.detail)}\n\n💡 更多细节可点击首页「${preferred.moduleLabel}」→「${preferred.catLabel}」查看～`;
         }
       }
@@ -4723,6 +4733,11 @@ function searchQAExactMatch(originalQ, kw, matchedIntent) {
 
   // 构造答案文本
   let answer = '';
+  // 记录命中元数据，供「你可能还想搜」别名组推荐使用
+  window.lastMatchedKeyword = best.keyword;
+  window.lastMatchedDetail = stripHtml(best.detail);
+  window.lastMatchedCategory = best.catLabel;
+  window.lastMatchedModule = best.moduleLabel;
   if (bestScore >= 8) {
     // 高分匹配：直接返回具体答案，标注来源分类
     answer = `${best.keyword}\n\n${stripHtml(best.detail)}\n\n💡 更多细节可点击首页「${best.moduleLabel}」→「${best.catLabel}」查看～`;
@@ -4737,6 +4752,12 @@ function searchQAExactMatch(originalQ, kw, matchedIntent) {
 }
 
 function assistantGetAnswer(q) {
+  // 重置上次命中的关键词元数据
+  window.lastMatchedKeyword = null;
+  window.lastMatchedDetail = '';
+  window.lastMatchedCategory = '';
+  window.lastMatchedModule = '';
+
   // 先做称呼归一化
   const kw = normalizeSlang(q.toLowerCase());
 
@@ -4988,6 +5009,12 @@ function asstShowSuggestions(val) {
 
 // 点击建议项直接显示答案（不走重新搜索，避免被INTENT_DEFS多轮对话截胡）
 function asstSendDirectAnswer(keyword, detail, category, module) {
+  // 记录当前点击的条目元数据（供「你可能还想搜」别名组推荐）
+  window.lastMatchedKeyword = keyword;
+  window.lastMatchedDetail = detail || '';
+  window.lastMatchedCategory = category || '';
+  window.lastMatchedModule = module || '';
+
   const input = document.getElementById('asst-input');
   input.value = '';
 
@@ -5029,6 +5056,9 @@ function asstSendDirectAnswer(keyword, detail, category, module) {
       if (actBtn) answerHtml += actBtn;
     }
 
+    // 命中具体 Q&A 时，追加「你可能还想搜」别名组相关推荐
+    answerHtml += buildAliasRelatedHtml(keyword);
+
     const botMsg = `<div class="assistant-msg bot">
       <div class="msg-avatar">${ASST_SPRITE}</div>
       <div class="msg-content">${answerHtml}</div>
@@ -5047,6 +5077,46 @@ function asstSendDirectAnswer(keyword, detail, category, module) {
 // 辅助：HTML属性转义
 function escapeAttr(s) {
   return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// 根据命中关键词所属的「搜索别名组」，生成「你可能还想搜」相关推荐
+// 例如：用户搜「调休假」或组内某一条目时，展示同组其它条目作为快捷入口
+function buildAliasRelatedHtml(currentKeyword) {
+  if (!currentKeyword || typeof attendanceSearchAliases === 'undefined' || typeof ASST_SUGGESTIONS === 'undefined') return '';
+
+  const normalizeForMatch = (s) => (s || '').toLowerCase().replace(/[？?！!。,，\s]/g, '');
+  const qNorm = normalizeForMatch(currentKeyword);
+
+  let groupItems = null;
+  for (const aliasKw in attendanceSearchAliases) {
+    const aliases = attendanceSearchAliases[aliasKw];
+    if (normalizeForMatch(aliasKw) === qNorm || aliases.some(a => normalizeForMatch(a) === qNorm)) {
+      groupItems = aliases;
+      break;
+    }
+  }
+
+  if (!groupItems || groupItems.length <= 1) return '';
+
+  let html = '<div class="asst-related" style="margin-top:12px;padding-top:10px;border-top:1px dashed #d4d2e0;">';
+  html += '<div style="font-size:12px;color:#888;margin-bottom:6px;">🔍 你可能还想搜：</div>';
+  let hasAny = false;
+  for (const itemKw of groupItems) {
+    // 不重复展示当前已回答的问题（按字面归一后去重）
+    if (normalizeForMatch(itemKw) === qNorm) continue;
+    const found = ASST_SUGGESTIONS.find(s => s.keyword === itemKw);
+    const detail = found ? (found.detail || '') : '';
+    const category = found ? (found.category || '') : '';
+    const module = found ? (found.module || '') : '';
+    const kwEsc = escapeAttr(itemKw);
+    const detailEsc = (detail || '').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+    const catEsc = escapeAttr(category);
+    const modEsc = escapeAttr(module);
+    html += `<a class="asst-rel-link" href="javascript:void(0)" onclick="asstSendDirectAnswer('${kwEsc}','${detailEsc}','${catEsc}','${modEsc}')">${escapeHtml(itemKw)}</a>`;
+    hasAny = true;
+  }
+  html += '</div>';
+  return hasAny ? html : '';
 }
 
 // 点击页面其他区域关闭联想框
@@ -5104,6 +5174,10 @@ function assistantSend() {
     const actMod = detectModuleFromQuery(q);
     const actBtn = getActionBtnHtml(actMod);
     if (actBtn) answerHtml += actBtn;
+    // 命中具体 Q&A 时，追加「你可能还想搜」别名组相关推荐
+    if (isHit) {
+      answerHtml += buildAliasRelatedHtml(window.lastMatchedKeyword || q);
+    }
     const botMsg = `<div class="assistant-msg bot">
       <div class="msg-avatar">${ASST_SPRITE}</div>
       <div class="msg-content">${answerHtml}</div>
