@@ -4608,7 +4608,7 @@ function searchQAExactMatch(originalQ, kw, matchedIntent) {
     }
   }
 
-  if (intent === 'attendance' || intent === 'late' || intent === 'overtime' || intent === 'leave' ||
+  if (intent === 'attendance' || intent === 'late' || intent === 'overtime' || intent === 'leave' || intent === 'compensatory_leave' ||
       kw.includes('打卡') || kw.includes('请假') || kw.includes('迟到') || kw.includes('补卡') ||
       kw.includes('缺卡') || kw.includes('忘打') || kw.includes('外勤') || kw.includes('考勤')) {
     // 考勤数据
@@ -4648,6 +4648,19 @@ function searchQAExactMatch(originalQ, kw, matchedIntent) {
 
   if (sources.length === 0) return null;
 
+  // 别名精确命中置顶：用户输入完全等于某个搜索别名时，直接返回该别名词典的首选条目
+  if (typeof attendanceSearchAliases !== 'undefined') {
+    for (const aliasKw in attendanceSearchAliases) {
+      if (kw === aliasKw.toLowerCase()) {
+        const preferredKeyword = attendanceSearchAliases[aliasKw][0];
+        const preferred = sources.find(s => s.keyword === preferredKeyword);
+        if (preferred) {
+          return `${preferred.keyword}\n\n${stripHtml(preferred.detail)}\n\n💡 更多细节可点击首页「${preferred.moduleLabel}」→「${preferred.catLabel}」查看～`;
+        }
+      }
+    }
+  }
+
   // ★ 否定语境检测：用户问"不能/不了/失败"时，优先匹配同类问题
   const queryNegType = detectQueryNegationType(originalQ);
 
@@ -4676,11 +4689,13 @@ function searchQAExactMatch(originalQ, kw, matchedIntent) {
       if (stripHtml(s.detail).toLowerCase().includes(t)) score += 0.5;
     }
 
-    // 别名映射加分
+    // 别名映射加分（命中别名+5；别名词典中的第一个条目额外+2，作为该别名默认首选）
     if (typeof attendanceSearchAliases !== 'undefined') {
       for (const aliasKw in attendanceSearchAliases) {
-        if (kw.includes(aliasKw) && attendanceSearchAliases[aliasKw].some(a => a === s.keyword)) {
+        const aliases = attendanceSearchAliases[aliasKw];
+        if (kw.includes(aliasKw) && aliases.some(a => a === s.keyword)) {
           score += 5;
+          if (aliases[0] === s.keyword) score += 2;
         }
       }
     }
