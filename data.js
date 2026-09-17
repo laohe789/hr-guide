@@ -2902,6 +2902,5 @@ const MORE_PAGE = {
     { q: '办公WiFi怎么连', target: '办公 WiFi' },
     { q: '怎么发IT故障单', target: '怎么发IT单 / IT单写什么' },
     { q: '怎么不能请假', target: '怎么不能请假' },
-    { q: '离职需要什么手续', target: '发起离职流程' },
   ],
 };
