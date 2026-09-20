@@ -4615,6 +4615,7 @@ function searchQAExactMatch(originalQ, kw, matchedIntent) {
   }
 
   if (intent === 'attendance' || intent === 'late' || intent === 'overtime' || intent === 'leave' || intent === 'compensatory_leave' ||
+      intent === 'cancel_leave' ||
       kw.includes('打卡') || kw.includes('请假') || kw.includes('迟到') || kw.includes('补卡') ||
       kw.includes('缺卡') || kw.includes('忘打') || kw.includes('外勤') || kw.includes('考勤')) {
     // 考勤数据
