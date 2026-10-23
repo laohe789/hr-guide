@@ -2344,7 +2344,7 @@ const faqData = [
 ];
 const CARD_COLORS = ['purple','green','blue','amber','pink','coral'];
 
-const ASST_SPRITE = '<img src="attachments/asst-avatar-new.png" alt="HR小助手" style="width:100%;height:100%;object-fit:contain;border-radius:50%;">';
+const ASST_SPRITE = '<img src="attachments/asst-avatar-new.png?v=20261023" alt="HR小助手" style="width:100%;height:100%;object-fit:contain;border-radius:50%;">';
 
 const INTENT_DEFS = [
   {
