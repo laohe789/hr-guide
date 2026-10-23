@@ -800,10 +800,14 @@
   display: none;
   max-height: 260px;
   overflow-y: auto;
-  margin-top: 16px;
+  margin-top: 0;
   text-align: left;
-  padding: 4px 0;
+  padding: 12px;
+  background: rgba(255,255,255,0.6);
+  border: 1px solid #c7d2fe;
+  border-radius: 12px;
 }
+.assistant-chat-area.show { margin-bottom: 16px; }
 .assistant-chat-area.show { display: block; }
 .assistant-msg {
   display: flex;
@@ -1922,6 +1926,7 @@
     <div class="assistant-card" id="assistant-card">
       <div class="assistant-greeting">你好！我是 HR小助手</div>
       <div class="assistant-subtitle">关于考勤、请假、转正等HR问题，都可以问我～</div>
+      <div class="assistant-chat-area" id="asst-chat"></div>
       <div class="assistant-input-wrap">
         <input class="assistant-input" id="asst-input" placeholder="输入你的问题，快速查找答案..."
                onkeydown="if(event.key==='Enter')assistantSend()"
@@ -1935,7 +1940,6 @@
         <span class="assistant-tag" onclick="assistantQuick('转正要多久')">转正要多久？</span>
         <span class="assistant-tag" onclick="assistantQuick('重新开始对话')">🔄 重新开始</span>
       </div>
-      <div class="assistant-chat-area" id="asst-chat"></div>
     </div>
 
     <!-- 首页全局搜索（跨模块命中） -->
