@@ -1933,6 +1933,7 @@
         <span class="assistant-tag" onclick="assistantQuick('年假有几天')">年假有几天？</span>
         <span class="assistant-tag" onclick="assistantQuick('怎么补卡')">怎么补卡？</span>
         <span class="assistant-tag" onclick="assistantQuick('转正要多久')">转正要多久？</span>
+        <span class="assistant-tag" onclick="assistantQuick('重新开始对话')">🔄 重新开始</span>
       </div>
       <div class="assistant-chat-area" id="asst-chat"></div>
     </div>
@@ -4498,12 +4499,12 @@ function continueWizard(kw) {
     asstState.retries++;
     if (asstState.retries >= 2) {
       // 最多重试2次，放弃向导，给最通用的建议
-      const generic = wiz.fallback || '我暂时无法准确回答这个问题 😅\n\n💡 建议你点击首页「' + (wiz.leadTo || '考勤指引') + '」卡片查看详细内容，或直接联系 HR 部门～';
+      const generic = wiz.fallback || '我暂时没太明白这一条 😅\n\n💡 如果想聊别的话题，发「重新开始」即可开启新对话；或点击首页对应模块卡片查看详细指引～';
       resetWizard();
       return generic;
     }
     // 换个方式再问
-    return '🤔 ' + (step.retryAsk || '我没有完全理解，能换个说法吗？') + '\n\n' + step.ask;
+    return '🤔 ' + (step.retryAsk || '我没有完全理解，能换个说法吗？') + '\n\n' + step.ask + '\n\n（想聊别的？发「重新开始」即可）';
   }
 
   // 解析成功，记录答案
@@ -4782,6 +4783,15 @@ function assistantGetAnswer(q) {
   // ====== 否定语境检测 ======
   // 提取用户"不是在说X"的信号，避免误匹配
   const negatedIntents = detectNegation(q, kw);
+
+  // ====== 重置指令：最高优先级，可随时打断向导/异常状态，重新开启对话 ======
+  if (/重新开始|重新来过|清空|重置|从头(开始|聊)|新对话|刷新对话|清屏|重新开启对话/.test(q)) {
+    resetWizard();
+    asstMemory.turns = [];
+    asstMemory.lastIntent = null;
+    asstMemory.lastTopic = null;
+    return '✨ 已为你重新开启对话～\n\n我是 HR小助手，考勤、请假、转正、离职、保险、账号、IT 等问题都可以问我。直接打字，或点下方快捷标签～';
+  }
 
   // ====== 第0层：向导模式继续 ======
   if (asstState.active) {
