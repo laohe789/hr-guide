@@ -4466,6 +4466,20 @@ function augmentBareNumber(kw, wizardKey, stepKey) {
   return num; // 无法推断，保持原样
 }
 
+// 向导进行中若用户其实在问别的模块：当前回答解析失败 + 命中其他模块高置信意图
+// （模块不同）→ 退出向导直接回答，避免"换个话题就答非所问/答不上来"
+function answerOtherTopicIfAsked(kw, curWiz) {
+  let best = null, bestScore = 0;
+  for (const def of INTENT_DEFS) {
+    const s = scoreIntent(kw, def, null);
+    if (s > bestScore && def.leadTo && def.leadTo !== curWiz.leadTo) {
+      bestScore = s;
+      best = def;
+    }
+  }
+  return (best && bestScore >= 3) ? best.answer : null;
+}
+
 // 向导继续：收集参数 → 下一问 / 给出答案
 function continueWizard(kw) {
   const wiz = WIZARD_DEFS[asstState.wizard];
@@ -4477,6 +4491,9 @@ function continueWizard(kw) {
   const parsed = step.parse(augmentedKw);
 
   if (parsed === null) {
+    // 话题切换保护：用户可能已经换了问题，却被向导当作补充回答
+    const otherAnswer = answerOtherTopicIfAsked(kw, wiz);
+    if (otherAnswer) { resetWizard(); return otherAnswer; }
     // 解析失败
     asstState.retries++;
     if (asstState.retries >= 2) {
